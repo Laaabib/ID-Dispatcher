@@ -1,0 +1,231 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (matches auth.uid)
+    // Fields:
+    //   - name: string
+    //   - email: string (email format)
+    //   - role: string ('admin' or 'user')
+    //   - createdAt: string (ISO 8601 date string)
+    //
+    // Collection: applications
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (matches auth.uid)
+    //   - name: string
+    //   - designation: string
+    //   - department: string
+    //   - applicationDate: string
+    //   - joiningDate: string
+    //   - nidNumber: string
+    //   - employeeId: string
+    //   - bloodGroup: string
+    //   - signatureData: string (base64)
+    //   - status: string ('Pending', 'Approved', 'Printed', 'Distributed', 'Rejected')
+    //   - createdAt: string (ISO 8601 date string)
+    //   - updatedAt: string (ISO 8601 date string)
+    //
+    // Collection: nametags
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (matches auth.uid)
+    //   - name: string
+    //   - designation: string
+    //   - department: string
+    //   - employeeId: string
+    //   - fastenerType: string ('Pin', 'Magnet')
+    //   - status: string ('Pending', 'Approved', 'Printed', 'Distributed', 'Rejected')
+    //   - createdAt: string (ISO 8601 date string)
+    //   - updatedAt: string (ISO 8601 date string)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "padmaawtit@gmail.com" && request.auth.token.email_verified == true) ||
+        request.auth.token.email == "140001@padmaawt.internal" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "padmaawtit@gmail.com" && request.auth.token.email_verified == true) ||
+        request.auth.token.email == "140001@padmaawt.internal" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'admin_approver', 'it_approver'])
+      );
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function hasOnlyAllowedFields(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['name', 'email', 'role', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'user', 'admin_approver', 'it_approver'] &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidApplication(data) {
+      return hasOnlyAllowedFields(['userId', 'name', 'designation', 'department', 'applicationDate', 'joiningDate', 'nidNumber', 'employeeId', 'bloodGroup', 'signatureData', 'status', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             (!('designation' in data) || (data.designation is string && data.designation.size() <= 100)) &&
+             (!('department' in data) || (data.department is string && data.department.size() <= 100)) &&
+             (!('applicationDate' in data) || (data.applicationDate is string && data.applicationDate.size() <= 50)) &&
+             (!('joiningDate' in data) || (data.joiningDate is string && data.joiningDate.size() <= 50)) &&
+             (!('nidNumber' in data) || (data.nidNumber is string && data.nidNumber.size() <= 50)) &&
+             (!('employeeId' in data) || (data.employeeId is string && data.employeeId.size() <= 50)) &&
+             (!('bloodGroup' in data) || (data.bloodGroup is string && data.bloodGroup.size() <= 10)) &&
+             (!('signatureData' in data) || (data.signatureData is string && data.signatureData.size() <= 1000000)) &&
+             data.status in ['Pending', 'Approved', 'Printed', 'Distributed', 'Rejected'] &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt);
+    }
+
+    function isValidNametag(data) {
+      return hasOnlyAllowedFields(['userId', 'name', 'designation', 'department', 'employeeId', 'fastenerType', 'status', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             (!('designation' in data) || (data.designation is string && data.designation.size() <= 100)) &&
+             (!('department' in data) || (data.department is string && data.department.size() <= 100)) &&
+             (!('employeeId' in data) || (data.employeeId is string && data.employeeId.size() <= 50)) &&
+             (!('fastenerType' in data) || (data.fastenerType in ['Pin', 'Magnet'])) &&
+             data.status in ['Pending', 'Approved', 'Printed', 'Distributed', 'Rejected'] &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt);
+    }
+
+    function isValidDailyWork(data) {
+      return hasOnlyAllowedFields(['userId', 'title', 'description', 'status', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 2000)) &&
+             data.status in ['queued', 'pending', 'done'] &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create their own profile, but only super admins can set role to 'admin', 'admin_approver', or 'it_approver'
+      allow create: if isOwner(userId) && 
+                       isValidUser(request.resource.data) && 
+                       (request.resource.data.role == 'user' || isSuperAdmin());
+                       
+      // Users can update their own profile, but cannot change their role unless they are super admin
+      allow update: if isOwner(userId) && 
+                       isValidUser(request.resource.data) && 
+                       (request.resource.data.role == resource.data.role || isSuperAdmin());
+                       
+      allow delete: if isSuperAdmin();
+    }
+
+    match /applications/{applicationId} {
+      // Users can read their own applications, admins can read all
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Users can create applications for themselves
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid && 
+                       isValidApplication(request.resource.data);
+                       
+      // Users can update their own applications only if status is 'Pending', admins can update any
+      allow update: if isAuthenticated() && 
+                       isValidApplication(request.resource.data) && 
+                       (
+                         isAdmin() || 
+                         (
+                           resource.data.userId == request.auth.uid && 
+                           request.resource.data.userId == resource.data.userId && 
+                           resource.data.status == 'Pending' &&
+                           request.resource.data.status == 'Pending' // Users cannot change status
+                         )
+                       );
+                       
+      allow delete: if isSuperAdmin();
+    }
+
+    match /nametags/{nametagId} {
+      // Users can read their own nametag requests, admins can read all
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Users can create nametag requests for themselves
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid && 
+                       isValidNametag(request.resource.data);
+                       
+      // Users can update their own requests only if status is 'Pending', admins can update any
+      allow update: if isAuthenticated() && 
+                       isValidNametag(request.resource.data) && 
+                       (
+                         isAdmin() || 
+                         (
+                           resource.data.userId == request.auth.uid && 
+                           request.resource.data.userId == resource.data.userId && 
+                           resource.data.status == 'Pending' &&
+                           request.resource.data.status == 'Pending' // Users cannot change status
+                         )
+                       );
+                       
+      allow delete: if isSuperAdmin();
+    }
+
+    match /daily_works/{workId} {
+      // Users can read their own daily works
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create their own daily works
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid && 
+                       isValidDailyWork(request.resource.data);
+                       
+      // Users can update their own daily works
+      allow update: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid && 
+                       request.resource.data.userId == resource.data.userId && 
+                       isValidDailyWork(request.resource.data);
+                       
+      // Users can delete their own daily works
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application, either an admin or a regular employee.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "user"],
+          "description": "The user's role."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the user was created."
+        }
+      },
+      "required": ["name", "email", "role", "createdAt"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "An ID card and nametag application.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who submitted the application."
+        },
+        "name": {
+          "type": "string",
+          "description": "Applicant's name."
+        },
+        "designation": {
+          "type": "string",
+          "description": "Applicant's designation."
+        },
+        "department": {
+          "type": "string",
+          "description": "Applicant's department."
+        },
+        "applicationDate": {
+          "type": "string",
+          "description": "Date of application."
+        },
+        "joiningDate": {
+          "type": "string",
+          "description": "Date of joining."
+        },
+        "nidNumber": {
+          "type": "string",
+          "description": "National ID number."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Employee ID."
+        },
+        "bloodGroup": {
+          "type": "string",
+          "description": "Applicant's blood group."
+        },
+        "signatureData": {
+          "type": "string",
+          "description": "Base64 encoded signature image."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Approved", "Printed", "Distributed", "Rejected"],
+          "description": "Status of the application."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the application was submitted."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the application was last updated."
+        }
+      },
+      "required": ["userId", "name", "designation", "department", "applicationDate", "joiningDate", "nidNumber", "employeeId", "bloodGroup", "signatureData", "status", "createdAt", "updatedAt"]
+    },
+    "Nametag": {
+      "title": "Nametag",
+      "description": "A nametag request.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who submitted the request."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name to appear on the nametag."
+        },
+        "designation": {
+          "type": "string",
+          "description": "Applicant's designation."
+        },
+        "department": {
+          "type": "string",
+          "description": "Applicant's department."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Employee ID."
+        },
+        "fastenerType": {
+          "type": "string",
+          "enum": ["Pin", "Magnet"],
+          "description": "Type of fastener for the nametag."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Approved", "Printed", "Distributed", "Rejected"],
+          "description": "Status of the request."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the request was submitted."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the request was last updated."
+        }
+      },
+      "required": ["userId", "name", "designation", "department", "employeeId", "fastenerType", "status", "createdAt", "updatedAt"]
+    },
+    "DailyWork": {
+      "title": "DailyWork",
+      "description": "A daily work task.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns the task."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the task."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["queued", "pending", "done"],
+          "description": "Status of the task."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the task was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the task was last updated."
+        }
+      },
+      "required": ["userId", "title", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles and roles."
+    },
+    "applications/{applicationId}": {
+      "schema": {
+        "$ref": "#/entities/Application"
+      },
+      "description": "Stores ID card applications."
+    },
+    "nametags/{nametagId}": {
+      "schema": {
+        "$ref": "#/entities/Nametag"
+      },
+      "description": "Stores nametag requests."
+    },
+    "daily_works/{workId}": {
+      "schema": {
+        "$ref": "#/entities/DailyWork"
+      },
+      "description": "Stores daily work tasks."
+    }
+  }
+}
