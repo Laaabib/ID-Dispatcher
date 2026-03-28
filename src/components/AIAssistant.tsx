@@ -5,7 +5,13 @@ import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+const getAI = () => {
+  if (!aiInstance && process.env.GEMINI_API_KEY) {
+    aiInstance = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  return aiInstance;
+};
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,6 +39,10 @@ export default function AIAssistant() {
     setLoading(true);
 
     try {
+      const ai = getAI();
+      if (!ai) {
+        throw new Error("AI is not configured. Missing API key.");
+      }
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: userMsg,
