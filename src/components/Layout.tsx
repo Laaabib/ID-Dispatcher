@@ -28,7 +28,7 @@ export default function Layout() {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <Link to="/" className="text-xl font-bold text-primary-600 dark:text-primary-400 flex items-center gap-3 transition-opacity hover:opacity-80">
-                <img src="/Logo.png" alt="ID Dispatcher" className="h-9 w-9 object-contain drop-shadow-sm" onError={(e) => {
+                <img src="/logo.png" alt="ID Dispatcher" className="h-9 w-9 object-contain drop-shadow-sm" onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }} />

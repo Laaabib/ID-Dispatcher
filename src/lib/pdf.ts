@@ -46,10 +46,10 @@ export const downloadApplicationPDF = async (app: PDFApplicationData) => {
   
   // Logo Area
   try {
-    const logoImg = await loadImage('/Logo.png');
+    const logoImg = await loadImage('/logo.png');
     doc.addImage(logoImg, 'PNG', 20, 50, 30, 30);
   } catch (e) {
-    console.warn('Could not load Logo.png, falling back to text', e);
+    console.warn('Could not load logo.png, falling back to text', e);
     // Outer circle
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(0, 100, 0);

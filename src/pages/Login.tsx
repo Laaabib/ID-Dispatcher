@@ -58,7 +58,7 @@ export default function Login() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
             <div className="bg-white p-2 rounded-xl">
-              <img src="/Logo.png" alt="ID Dispatcher" className="h-10 w-10 object-contain" onError={(e) => {
+              <img src="/logo.png" alt="ID Dispatcher" className="h-10 w-10 object-contain" onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }} />
@@ -117,7 +117,7 @@ export default function Login() {
         {/* Mobile Header (only visible on small screens) */}
         <div className="lg:hidden flex items-center gap-3 mb-8 self-start">
           <div className="bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-            <img src="/Logo.png" alt="ID Dispatcher" className="h-8 w-8 object-contain" onError={(e) => {
+            <img src="/logo.png" alt="ID Dispatcher" className="h-8 w-8 object-contain" onError={(e) => {
               e.currentTarget.style.display = 'none';
               e.currentTarget.nextElementSibling?.classList.remove('hidden');
             }} />
