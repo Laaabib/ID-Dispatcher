@@ -1,5 +1,5 @@
 {
-  "name": "ID Dispatcher",
+  "name": "Padma id Manager",
   "description": "A mobile-first web application for managing ID card and nametag distribution, featuring an application form, admin panel, and login system.",
   "requestFramePermissions": []
 }

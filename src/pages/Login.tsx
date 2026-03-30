@@ -6,6 +6,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { IdCard, ShieldCheck, Clock, FileText, ChevronRight, User, UserPlus } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 export default function Login() {
   const { user, login, loginWithEmployeeId, registerWithEmployeeId } = useAuth();
@@ -45,9 +46,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50 dark:bg-transparent font-sans transition-colors duration-300">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white dark:bg-transparent font-sans transition-colors duration-300">
       {/* Left Panel - Branding & Info */}
-      <div className="hidden lg:flex lg:w-1/2 bg-slate-900 text-white flex-col justify-between p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-primary-600 dark:bg-slate-900 text-white flex-col justify-between p-12 relative overflow-hidden transition-colors duration-300">
         {/* Background decorations */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
           <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-primary-600/20 blur-3xl"></div>
@@ -58,57 +59,57 @@ export default function Login() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
             <div className="bg-white p-2 rounded-xl">
-              <img src="/logo.png" alt="ID Dispatcher" className="h-10 w-10 object-contain" onError={(e) => {
+              <img src={logoImg} alt="Padma id Manager" className="h-10 w-10 object-contain" onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }} />
               <IdCard className="hidden w-10 h-10 text-primary-600" />
             </div>
-            <span className="text-xl font-bold tracking-tight">ID Dispatcher</span>
+            <span className="text-xl font-bold tracking-tight"><span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '1.4em', fontWeight: 'normal' }} className="text-primary-400">Padma</span> id Manager</span>
           </div>
 
           <div className="max-w-md mt-20">
             <h1 className="text-4xl font-bold tracking-tight mb-6 leading-tight">
-              ID <br/><span className="text-primary-400">Dispatcher</span>
+              <span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '1.4em', fontWeight: 'normal' }} className="text-primary-400">Padma</span> <br/><span className="text-white">id Manager</span>
             </h1>
-            <p className="text-slate-400 text-lg mb-10 leading-relaxed">
+            <p className="text-primary-100 dark:text-slate-400 text-lg mb-10 leading-relaxed">
               Streamline your ID card and nametag requests. A secure, centralized platform for all personnel identification needs.
             </p>
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                  <FileText className="w-6 h-6 text-primary-400" />
+                <div className="bg-primary-700/50 dark:bg-slate-800/50 p-3 rounded-lg border border-primary-500/50 dark:border-slate-700/50">
+                  <FileText className="w-6 h-6 text-primary-200 dark:text-primary-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">Digital Applications</h3>
-                  <p className="text-slate-400 text-sm mt-1">Submit and track your ID card requests entirely online.</p>
+                  <p className="text-primary-100 dark:text-slate-400 text-sm mt-1">Submit and track your ID card requests entirely online.</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                  <Clock className="w-6 h-6 text-primary-400" />
+                <div className="bg-primary-700/50 dark:bg-slate-800/50 p-3 rounded-lg border border-primary-500/50 dark:border-slate-700/50">
+                  <Clock className="w-6 h-6 text-primary-200 dark:text-primary-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">Real-time Tracking</h3>
-                  <p className="text-slate-400 text-sm mt-1">Monitor the status of your requests from submission to distribution.</p>
+                  <p className="text-primary-100 dark:text-slate-400 text-sm mt-1">Monitor the status of your requests from submission to distribution.</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                  <ShieldCheck className="w-6 h-6 text-primary-400" />
+                <div className="bg-primary-700/50 dark:bg-slate-800/50 p-3 rounded-lg border border-primary-500/50 dark:border-slate-700/50">
+                  <ShieldCheck className="w-6 h-6 text-primary-200 dark:text-primary-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">Secure Access</h3>
-                  <p className="text-slate-400 text-sm mt-1">Enterprise-grade security using your Employee ID or corporate Google credentials.</p>
+                  <p className="text-primary-100 dark:text-slate-400 text-sm mt-1">Enterprise-grade security using your Employee ID or corporate Google credentials.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="relative z-10 text-sm text-slate-500 font-medium">
-          &copy; {new Date().getFullYear()} ID Dispatcher. All rights reserved.
+        <div className="relative z-10 text-sm text-primary-200 dark:text-slate-500 font-medium">
+          &copy; {new Date().getFullYear()} Padma id Manager. All rights reserved.
         </div>
       </div>
 
@@ -117,13 +118,13 @@ export default function Login() {
         {/* Mobile Header (only visible on small screens) */}
         <div className="lg:hidden flex items-center gap-3 mb-8 self-start">
           <div className="bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-            <img src="/logo.png" alt="ID Dispatcher" className="h-8 w-8 object-contain" onError={(e) => {
+            <img src={logoImg} alt="Padma id Manager" className="h-8 w-8 object-contain" onError={(e) => {
               e.currentTarget.style.display = 'none';
               e.currentTarget.nextElementSibling?.classList.remove('hidden');
             }} />
             <IdCard className="hidden w-8 h-8 text-primary-600 dark:text-primary-400" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">ID Dispatcher</span>
+          <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white"><span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '1.4em', fontWeight: 'normal' }} className="text-primary-600 dark:text-primary-400">Padma</span> id Manager</span>
         </div>
 
         <div className="w-full max-w-md space-y-8">

@@ -9,6 +9,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import SignatureCanvas from 'react-signature-canvas';
 import { format } from 'date-fns';
+import logoImg from '../assets/logo.png';
 
 export default function ApplicationForm() {
   const { user } = useAuth();
@@ -83,7 +84,7 @@ export default function ApplicationForm() {
       <Card className="border-slate-200/60 shadow-lg shadow-slate-200/40">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-6">
           <div className="flex items-center gap-4">
-            <img src="/logo.png" alt="ID Dispatcher" className="h-14 w-14 object-contain drop-shadow-sm" onError={(e) => {
+            <img src={logoImg} alt="Padma id Manager" className="h-14 w-14 object-contain drop-shadow-sm" onError={(e) => {
               e.currentTarget.style.display = 'none';
             }} />
             <div>

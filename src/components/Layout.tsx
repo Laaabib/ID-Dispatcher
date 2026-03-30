@@ -3,8 +3,9 @@ import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Button } from '../components/ui/button';
-import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu } from 'lucide-react';
+import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2 } from 'lucide-react';
 import AIAssistant from './AIAssistant';
+import logoImg from '../assets/logo.png';
 
 export default function Layout() {
   const { user, role, logout } = useAuth();
@@ -22,18 +23,17 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-transparent flex flex-col relative font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-transparent flex flex-col relative font-sans transition-colors duration-300">
       <header className="bg-white/70 dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200/60 dark:border-white/10 sticky top-0 z-20 transition-all duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <Link to="/" className="text-xl font-bold text-primary-600 dark:text-primary-400 flex items-center gap-3 transition-opacity hover:opacity-80">
-                <img src="/logo.png" alt="ID Dispatcher" className="h-9 w-9 object-contain drop-shadow-sm" onError={(e) => {
+                <img src={logoImg} alt="Padma id Manager" className="h-9 w-9 object-contain drop-shadow-sm" onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }} />
-                <span className="hidden bg-primary-600 dark:bg-primary-500 text-white px-2 py-1 rounded-md text-sm font-semibold tracking-wide shadow-sm">ID</span>
-                <span className="tracking-tight text-slate-900 dark:text-white">Dispatcher</span>
+                <span className="tracking-tight text-slate-900 dark:text-white"><span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '1.4em', fontWeight: 'normal' }} className="text-primary-600 dark:text-primary-400">Padma</span> id Manager</span>
               </Link>
             </div>
             
@@ -47,6 +47,14 @@ export default function Layout() {
                       <span>Dashboard</span>
                     </Button>
                   </Link>
+              {role === 'admin' && (
+                  <Link to="/reports">
+                    <Button variant="ghost" size="sm" className="gap-2 text-slate-700 dark:text-slate-300">
+                      <BarChart2 className="w-4 h-4" />
+                      <span>Reports</span>
+                    </Button>
+                  </Link>
+              )}
                   <Link to="/admin">
                     <Button variant="ghost" size="sm" className="gap-2 text-slate-700 dark:text-slate-300">
                       <Shield className="w-4 h-4" />
@@ -107,6 +115,14 @@ export default function Layout() {
                       Dashboard
                     </Button>
                   </Link>
+              {role === 'admin' && (
+                  <Link to="/reports" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-3 text-slate-700 dark:text-slate-300">
+                      <BarChart2 className="w-4 h-4" />
+                      Reports
+                    </Button>
+                  </Link>
+              )}
                   <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start gap-3 text-slate-700 dark:text-slate-300">
                       <Shield className="w-4 h-4" />
