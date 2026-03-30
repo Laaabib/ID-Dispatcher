@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import logoImgSrc from '../assets/logo.png';
+import logoImgSrc from '../assets/logo.svg';
 
 export interface PDFApplicationData {
   name: string;
@@ -27,11 +27,22 @@ export const downloadApplicationPDF = async (app: PDFApplicationData) => {
   const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
   // Helper to load image
-  const loadImage = (url: string): Promise<HTMLImageElement> => {
+  const loadImage = (url: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'Anonymous';
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width || 100;
+        canvas.height = img.height || 100;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          reject(new Error('Canvas context not available'));
+        }
+      };
       img.onerror = reject;
       img.src = url;
     });
@@ -39,10 +50,10 @@ export const downloadApplicationPDF = async (app: PDFApplicationData) => {
 
   // --- HEADER ---
   try {
-    const logoImg = await loadImage(logoImgSrc);
-    doc.addImage(logoImg, 'PNG', MARGIN, MARGIN, 25, 25);
+    const logoBase64 = await loadImage(logoImgSrc);
+    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 25, 25);
   } catch (e) {
-    console.warn('Could not load logo.png', e);
+    console.warn('Could not load logo', e);
     doc.setFillColor(30, 64, 175); // Primary blue
     doc.rect(MARGIN, MARGIN, 25, 25, 'F');
     doc.setTextColor(255, 255, 255);
@@ -79,22 +90,17 @@ export const downloadApplicationPDF = async (app: PDFApplicationData) => {
   doc.text(`Date: ${app.applicationDate}`, MARGIN, MARGIN + 52);
   doc.text(`Status: ${app.status.toUpperCase()}`, PAGE_WIDTH - MARGIN, MARGIN + 52, { align: 'right' });
 
-  // --- PHOTO BOX ---
-  const photoX = PAGE_WIDTH - MARGIN - 35;
-  const photoY = MARGIN + 60;
-  doc.setDrawColor(148, 163, 184); // slate-400
-  doc.setLineDashPattern([2, 2], 0);
-  doc.rect(photoX, photoY, 35, 45);
-  doc.setLineDashPattern([], 0);
-  doc.setFontSize(8);
-  doc.setTextColor(148, 163, 184);
-  doc.text("Attach 1 Copy", photoX + 17.5, photoY + 20, { align: 'center' });
-  doc.text("Passport Size", photoX + 17.5, photoY + 25, { align: 'center' });
-  doc.text("Photo Here", photoX + 17.5, photoY + 30, { align: 'center' });
+  // --- HIGHLIGHTED PHOTO INSTRUCTION ---
+  doc.setFillColor(254, 240, 138); // yellow-200
+  doc.rect(MARGIN, MARGIN + 58, CONTENT_WIDTH, 12, 'F');
+  doc.setTextColor(161, 98, 7); // yellow-700
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("IMPORTANT: Send your passport photo to this number +8801769085102 (WhatsApp only)", PAGE_WIDTH / 2, MARGIN + 66, { align: 'center' });
 
   // --- FORM FIELDS ---
-  let currentY = MARGIN + 65;
-  const fieldWidth = CONTENT_WIDTH - 45; // Leave space for photo
+  let currentY = MARGIN + 80;
+  const fieldWidth = CONTENT_WIDTH;
   
   const drawField = (label: string, value: string, y: number, width: number) => {
     // Label
@@ -244,11 +250,22 @@ export const downloadReportPDF = async (metrics: ReportMetrics) => {
   const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
   // Helper to load image
-  const loadImage = (url: string): Promise<HTMLImageElement> => {
+  const loadImage = (url: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'Anonymous';
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width || 100;
+        canvas.height = img.height || 100;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          reject(new Error('Canvas context not available'));
+        }
+      };
       img.onerror = reject;
       img.src = url;
     });
@@ -256,10 +273,10 @@ export const downloadReportPDF = async (metrics: ReportMetrics) => {
 
   // --- HEADER ---
   try {
-    const logoImg = await loadImage(logoImgSrc);
-    doc.addImage(logoImg, 'PNG', MARGIN, MARGIN, 25, 25);
+    const logoBase64 = await loadImage(logoImgSrc);
+    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 25, 25);
   } catch (e) {
-    console.warn('Could not load logo.png', e);
+    console.warn('Could not load logo', e);
     doc.setFillColor(30, 64, 175); // Primary blue
     doc.rect(MARGIN, MARGIN, 25, 25, 'F');
     doc.setTextColor(255, 255, 255);

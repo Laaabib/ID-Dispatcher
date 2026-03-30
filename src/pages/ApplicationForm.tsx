@@ -9,7 +9,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import SignatureCanvas from 'react-signature-canvas';
 import { format } from 'date-fns';
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/logo.svg';
 
 export default function ApplicationForm() {
   const { user } = useAuth();
@@ -94,6 +94,14 @@ export default function ApplicationForm() {
           </div>
         </CardHeader>
         <CardContent className="pt-6">
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-md mb-6 text-sm font-medium flex items-center gap-3">
+            <div className="bg-yellow-100 p-2 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-700">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <p>IMPORTANT: Send your passport photo to this number <span className="font-bold">+8801769085102</span> (WhatsApp only)</p>
+          </div>
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 text-sm">
               {error}

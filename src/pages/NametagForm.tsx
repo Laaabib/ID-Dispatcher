@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/logo.svg';
 
 export default function NametagForm() {
   const { user } = useAuth();
