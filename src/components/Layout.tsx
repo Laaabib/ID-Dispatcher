@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Button } from '../components/ui/button';
 import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2 } from 'lucide-react';
 import AIAssistant from './AIAssistant';
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/Logo.svg';
 
 export default function Layout() {
   const { user, role, logout } = useAuth();
