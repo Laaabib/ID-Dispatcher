@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import logoImgSrc from '../assets/logo.svg';
+import logoImgSrc from '../assets/logo.png';
 
 export interface PDFApplicationData {
   name: string;

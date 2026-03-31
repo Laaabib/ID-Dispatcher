@@ -9,7 +9,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import SignatureCanvas from 'react-signature-canvas';
 import { format } from 'date-fns';
-import logoImg from '../assets/logo.svg';
+import logoImg from '../assets/logo.png';
 
 export default function ApplicationForm() {
   const { user } = useAuth();

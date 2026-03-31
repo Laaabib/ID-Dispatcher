@@ -6,7 +6,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { IdCard, ShieldCheck, Clock, FileText, ChevronRight, User, UserPlus } from 'lucide-react';
-import logoImg from '../assets/logo.svg';
+import logoImg from '../assets/logo.png';
 
 export default function Login() {
   const { user, login, loginWithEmployeeId, registerWithEmployeeId } = useAuth();
