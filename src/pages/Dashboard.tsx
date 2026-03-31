@@ -120,16 +120,18 @@ export default function Dashboard() {
               Nametag
             </Button>
           </Link>
-          <Button 
-            className="gap-2 shadow-sm" 
-            onClick={() => {
-              setIsAddingDailyWork(true);
-              document.getElementById('daily-works-section')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            Daily Work
-          </Button>
+          {(user?.email === '140001@padmaawt.internal' || user?.email === 'padmaawtit@gmail.com') && (
+            <Button 
+              className="gap-2 shadow-sm" 
+              onClick={() => {
+                setIsAddingDailyWork(true);
+                document.getElementById('daily-works-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Daily Work
+            </Button>
+          )}
         </div>
       </div>
 
@@ -236,9 +238,11 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div id="daily-works-section">
-        <DailyWorks isAdding={isAddingDailyWork} setIsAdding={setIsAddingDailyWork} />
-      </div>
+      {(user?.email === '140001@padmaawt.internal' || user?.email === 'padmaawtit@gmail.com') && (
+        <div id="daily-works-section">
+          <DailyWorks isAdding={isAddingDailyWork} setIsAdding={setIsAddingDailyWork} />
+        </div>
+      )}
     </div>
   );
 }

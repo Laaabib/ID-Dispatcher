@@ -155,6 +155,26 @@
           "type": "string",
           "description": "Optional description of the task."
         },
+        "taskTime": {
+          "type": "string",
+          "description": "Time of the task."
+        },
+        "taskDate": {
+          "type": "string",
+          "description": "Date of the task."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for the task."
+        },
+        "timesNeeded": {
+          "type": "string",
+          "description": "Times needed to finish the task."
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Additional remarks."
+        },
         "status": {
           "type": "string",
           "enum": ["queued", "pending", "done"],
@@ -172,6 +192,37 @@
         }
       },
       "required": ["userId", "title", "status", "createdAt", "updatedAt"]
+    },
+    "ItemInventory": {
+      "title": "ItemInventory",
+      "description": "Item inventory records.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "remarks": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "quantity", "createdAt", "updatedAt"]
+    },
+    "AssetInventory": {
+      "title": "AssetInventory",
+      "description": "Asset inventory records.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "status": { "type": "string" },
+        "remarks": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -198,6 +249,18 @@
         "$ref": "#/entities/DailyWork"
       },
       "description": "Stores daily work tasks."
+    },
+    "item_inventory/{itemId}": {
+      "schema": {
+        "$ref": "#/entities/ItemInventory"
+      },
+      "description": "Stores item inventory."
+    },
+    "asset_inventory/{assetId}": {
+      "schema": {
+        "$ref": "#/entities/AssetInventory"
+      },
+      "description": "Stores asset inventory."
     }
   }
 }

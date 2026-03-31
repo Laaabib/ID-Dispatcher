@@ -12,6 +12,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import Reports from './pages/Reports';
 import NametagForm from './pages/NametagForm';
 import NametagAdmin from './pages/NametagAdmin';
+import DailyWorksPage from './pages/DailyWorksPage';
+import InventoryManagement from './pages/InventoryManagement';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -48,6 +50,8 @@ export default function App() {
                 <Route path="admin" element={<AdminPanel />} />
                 <Route path="nametag-request" element={<NametagForm />} />
                 <Route path="nametag-admin" element={<NametagAdmin />} />
+                <Route path="daily-works" element={<DailyWorksPage />} />
+                <Route path="inventory" element={<InventoryManagement />} />
               </Route>
             </Routes>
           </BrowserRouter>

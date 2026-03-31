@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Button } from '../components/ui/button';
-import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2 } from 'lucide-react';
+import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2, CheckCircle2, Package } from 'lucide-react';
 import AIAssistant from './AIAssistant';
 import logoImg from '../assets/Logo.svg';
 
@@ -65,6 +65,22 @@ export default function Layout() {
                     <Button variant="ghost" size="sm" className="gap-2 text-slate-700 dark:text-slate-300">
                       <BadgeIcon className="w-4 h-4" />
                       <span>Nametags</span>
+                    </Button>
+                  </Link>
+                </>
+              )}
+              {(user?.email === '140001@padmaawt.internal' || user?.email === 'padmaawtit@gmail.com') && (
+                <>
+                  <Link to="/daily-works">
+                    <Button variant="ghost" size="sm" className="gap-2 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Daily Works</span>
+                    </Button>
+                  </Link>
+                  <Link to="/inventory">
+                    <Button variant="ghost" size="sm" className="gap-2 text-slate-700 dark:text-slate-300">
+                      <Package className="w-4 h-4" />
+                      <span>Inventory</span>
                     </Button>
                   </Link>
                 </>
@@ -133,6 +149,22 @@ export default function Layout() {
                     <Button variant="ghost" className="w-full justify-start gap-3 text-slate-700 dark:text-slate-300">
                       <BadgeIcon className="w-4 h-4" />
                       Nametags
+                    </Button>
+                  </Link>
+                </>
+              )}
+              {(user?.email === '140001@padmaawt.internal' || user?.email === 'padmaawtit@gmail.com') && (
+                <>
+                  <Link to="/daily-works" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-3 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Daily Works
+                    </Button>
+                  </Link>
+                  <Link to="/inventory" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-3 text-slate-700 dark:text-slate-300">
+                      <Package className="w-4 h-4" />
+                      Inventory
                     </Button>
                   </Link>
                 </>
