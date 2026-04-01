@@ -24,10 +24,10 @@ export default function Reports() {
         {role === 'admin' && (
           <button
             onClick={() => setActiveTab('inventory')}
-            className={`flex items-center gap-2 pb-3 px-4 font-medium text-sm transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-2 pb-3 px-4 font-medium text-sm transition-all duration-300 ease-out whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:transition-all after:duration-300 hover:-translate-y-0.5 ${
               activeTab === 'inventory'
-                ? 'border-b-2 border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
-                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                ? 'text-primary-600 dark:text-primary-400 after:w-full'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 after:w-0 hover:after:w-full'
             }`}
           >
             <Package className="w-4 h-4" />
@@ -36,10 +36,10 @@ export default function Reports() {
         )}
         <button
           onClick={() => setActiveTab('attendance')}
-          className={`flex items-center gap-2 pb-3 px-4 font-medium text-sm transition-colors whitespace-nowrap ${
+          className={`flex items-center gap-2 pb-3 px-4 font-medium text-sm transition-all duration-300 ease-out whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:transition-all after:duration-300 hover:-translate-y-0.5 ${
             activeTab === 'attendance'
-              ? 'border-b-2 border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              ? 'text-primary-600 dark:text-primary-400 after:w-full'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 after:w-0 hover:after:w-full'
           }`}
         >
           <FileText className="w-4 h-4" />

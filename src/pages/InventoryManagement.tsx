@@ -351,10 +351,10 @@ export default function InventoryManagement() {
 
       <div className="flex border-b border-slate-200 dark:border-slate-800">
         <button
-          className={`px-4 py-2 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${
+          className={`px-4 py-2 font-medium text-sm flex items-center gap-2 transition-all duration-300 ease-out relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:transition-all after:duration-300 hover:-translate-y-0.5 ${
             activeTab === 'items'
-              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              ? 'text-primary-600 dark:text-primary-400 after:w-full'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 after:w-0 hover:after:w-full'
           }`}
           onClick={() => { setActiveTab('items'); setSelectedCategory(''); setSearchQuery(''); setIsAdding(false); }}
         >
@@ -362,10 +362,10 @@ export default function InventoryManagement() {
           Item Inventory
         </button>
         <button
-          className={`px-4 py-2 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${
+          className={`px-4 py-2 font-medium text-sm flex items-center gap-2 transition-all duration-300 ease-out relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:transition-all after:duration-300 hover:-translate-y-0.5 ${
             activeTab === 'assets'
-              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              ? 'text-primary-600 dark:text-primary-400 after:w-full'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 after:w-0 hover:after:w-full'
           }`}
           onClick={() => { setActiveTab('assets'); setSelectedCategory(''); setSearchQuery(''); setIsAdding(false); }}
         >

@@ -14,10 +14,10 @@ const NavItem = ({ to, icon: Icon, children, onClick, isCollapsed }: { to: strin
     onClick={onClick}
     title={isCollapsed ? children as string : undefined}
     className={({ isActive }) =>
-      `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
+      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0 ${
         isActive
-          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          ? 'bg-primary-50/80 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 shadow-sm border border-primary-100 dark:border-primary-800/50 backdrop-blur-md'
+          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 hover:shadow-sm border border-transparent backdrop-blur-sm'
       } ${isCollapsed ? 'justify-center' : ''}`
     }
   >

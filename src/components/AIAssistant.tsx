@@ -67,7 +67,7 @@ export default function AIAssistant() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-primary-600 text-white p-4 rounded-full shadow-lg hover:bg-primary-500 transition-transform hover:scale-105 z-50 flex items-center justify-center border border-white/10 backdrop-blur-md"
+          className="fixed bottom-6 right-6 bg-primary-600/90 backdrop-blur-md text-white p-4 rounded-full shadow-[0_4px_20px_-4px_rgba(37,99,235,0.4)] hover:bg-primary-600 hover:shadow-[0_8px_25px_-4px_rgba(37,99,235,0.6)] transition-all duration-300 hover:-translate-y-1 active:translate-y-0 z-50 flex items-center justify-center border border-white/10"
         >
           <MessageCircle className="w-6 h-6" />
         </button>

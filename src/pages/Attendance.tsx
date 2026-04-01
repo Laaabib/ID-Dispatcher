@@ -191,14 +191,14 @@ export default function Attendance() {
               <Button 
                 onClick={handleCheckIn} 
                 disabled={!selectedEmployeeId}
-                className="flex-1 h-14 text-lg bg-green-600 hover:bg-green-700 text-white gap-2"
+                className="flex-1 h-14 text-lg bg-green-600/90 hover:bg-green-600 text-white gap-2 shadow-[0_4px_20px_-4px_rgba(22,163,74,0.4)] hover:shadow-[0_8px_25px_-4px_rgba(22,163,74,0.6)] backdrop-blur-md border border-white/10 relative overflow-hidden after:absolute after:inset-0 after:rounded-xl after:bg-gradient-to-tr after:from-white/0 after:via-white/20 after:to-white/0 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-500"
               >
                 <Clock className="w-5 h-5" /> Check In
               </Button>
             ) : !todayAttendance.checkOutTime ? (
               <Button 
                 onClick={handleCheckOut} 
-                className="flex-1 h-14 text-lg bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                className="flex-1 h-14 text-lg bg-blue-600/90 hover:bg-blue-600 text-white gap-2 shadow-[0_4px_20px_-4px_rgba(37,99,235,0.4)] hover:shadow-[0_8px_25px_-4px_rgba(37,99,235,0.6)] backdrop-blur-md border border-white/10 relative overflow-hidden after:absolute after:inset-0 after:rounded-xl after:bg-gradient-to-tr after:from-white/0 after:via-white/20 after:to-white/0 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-500"
               >
                 <Clock className="w-5 h-5" /> Check Out
               </Button>

@@ -178,7 +178,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
                 <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">{work.title}</p>
                 <button 
                   onClick={() => handleDeleteTask(work.id)}
-                  className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110"
                   title="Delete task"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -202,7 +202,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
                   {status !== 'queued' && (
                     <button 
                       onClick={() => handleUpdateStatus(work.id, 'queued')}
-                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110"
                       title="Move to Queued"
                     >
                       <Circle className="w-4 h-4" />
@@ -211,7 +211,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
                   {status !== 'pending' && (
                     <button 
                       onClick={() => handleUpdateStatus(work.id, 'pending')}
-                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-amber-500"
+                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-amber-500 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110"
                       title="Move to Pending"
                     >
                       <Clock className="w-4 h-4" />
@@ -220,7 +220,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
                   {status !== 'done' && (
                     <button 
                       onClick={() => handleUpdateStatus(work.id, 'done')}
-                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-emerald-500"
+                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-emerald-500 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110"
                       title="Move to Done"
                     >
                       <CheckCircle2 className="w-4 h-4" />
