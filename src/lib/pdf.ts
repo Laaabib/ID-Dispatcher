@@ -2,6 +2,27 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoImgSrc from '../assets/Logo.svg';
 
+// Shared helper to load image
+const loadImage = (url: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width || 200;
+      canvas.height = img.height || 200;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/png'));
+      } else {
+        reject(new Error('Canvas context not available'));
+      }
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
 export interface PDFApplicationData {
   name: string;
   designation: string;
@@ -24,83 +45,60 @@ export const downloadApplicationPDF = async (app: PDFApplicationData) => {
 
   const PAGE_WIDTH = doc.internal.pageSize.getWidth();
   const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
-  const MARGIN = 20;
+  const MARGIN = 15;
   const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
-
-  // Helper to load image
-  const loadImage = (url: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width || 100;
-        canvas.height = img.height || 100;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } else {
-          reject(new Error('Canvas context not available'));
-        }
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
-  };
 
   // --- HEADER ---
   try {
     const logoBase64 = await loadImage(logoImgSrc);
-    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 25, 25);
+    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 15, 15);
   } catch (e) {
     console.warn('Could not load logo', e);
     doc.setFillColor(30, 64, 175); // Primary blue
-    doc.rect(MARGIN, MARGIN, 25, 25, 'F');
+    doc.rect(MARGIN, MARGIN, 15, 15, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text("LOGO", MARGIN + 12.5, MARGIN + 14, { align: "center" });
+    doc.setFontSize(8);
+    doc.text("LOGO", MARGIN + 7.5, MARGIN + 8.5, { align: "center" });
   }
 
   // Company Info
   doc.setTextColor(15, 23, 42); // slate-900
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text("Padma AWT Rest House", MARGIN + 30, MARGIN + 10);
+  doc.setFontSize(16);
+  doc.text("Padma AWT Rest House", MARGIN + 20, MARGIN + 6);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(100, 116, 139); // slate-500
-  doc.text("Employee Identification Card Application", MARGIN + 30, MARGIN + 16);
-  doc.text("Official Record Document", MARGIN + 30, MARGIN + 21);
+  doc.text("Employee Identification Card Application - Official Record Document", MARGIN + 20, MARGIN + 12);
 
   // Header Divider
   doc.setDrawColor(226, 232, 240); // slate-200
   doc.setLineWidth(0.5);
-  doc.line(MARGIN, MARGIN + 30, PAGE_WIDTH - MARGIN, MARGIN + 30);
+  doc.line(MARGIN, MARGIN + 18, PAGE_WIDTH - MARGIN, MARGIN + 18);
 
   // --- TITLE ---
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("ID CARD APPLICATION FORM", PAGE_WIDTH / 2, MARGIN + 42, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text("ID CARD APPLICATION FORM", PAGE_WIDTH / 2, MARGIN + 26, { align: 'center' });
 
   // Application Date & Status
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Date: ${app.applicationDate}`, MARGIN, MARGIN + 52);
-  doc.text(`Status: ${app.status.toUpperCase()}`, PAGE_WIDTH - MARGIN, MARGIN + 52, { align: 'right' });
+  doc.text(`Date: ${app.applicationDate}`, MARGIN, MARGIN + 32);
+  doc.text(`Status: ${app.status.toUpperCase()}`, PAGE_WIDTH - MARGIN, MARGIN + 32, { align: 'right' });
 
   // --- HIGHLIGHTED PHOTO INSTRUCTION ---
   doc.setFillColor(254, 240, 138); // yellow-200
-  doc.rect(MARGIN, MARGIN + 58, CONTENT_WIDTH, 12, 'F');
+  doc.rect(MARGIN, MARGIN + 36, CONTENT_WIDTH, 10, 'F');
   doc.setTextColor(161, 98, 7); // yellow-700
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("IMPORTANT: Send your passport photo to this number +8801769085102 (WhatsApp only)", PAGE_WIDTH / 2, MARGIN + 66, { align: 'center' });
+  doc.setFontSize(9);
+  doc.text("IMPORTANT: Send your passport photo to this number +8801769085102 (WhatsApp only)", PAGE_WIDTH / 2, MARGIN + 42.5, { align: 'center' });
 
   // --- FORM FIELDS ---
-  let currentY = MARGIN + 80;
+  let currentY = MARGIN + 55;
   const fieldWidth = CONTENT_WIDTH;
   
   const drawField = (label: string, value: string, y: number, width: number) => {
@@ -249,74 +247,51 @@ export const downloadReportPDF = async (metrics: ReportMetrics) => {
 
   const PAGE_WIDTH = doc.internal.pageSize.getWidth();
   const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
-  const MARGIN = 20;
+  const MARGIN = 15;
   const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
-
-  // Helper to load image
-  const loadImage = (url: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width || 100;
-        canvas.height = img.height || 100;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } else {
-          reject(new Error('Canvas context not available'));
-        }
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
-  };
 
   // --- HEADER ---
   try {
     const logoBase64 = await loadImage(logoImgSrc);
-    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 25, 25);
+    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 15, 15);
   } catch (e) {
     console.warn('Could not load logo', e);
     doc.setFillColor(30, 64, 175); // Primary blue
-    doc.rect(MARGIN, MARGIN, 25, 25, 'F');
+    doc.rect(MARGIN, MARGIN, 15, 15, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text("LOGO", MARGIN + 12.5, MARGIN + 14, { align: "center" });
+    doc.setFontSize(8);
+    doc.text("LOGO", MARGIN + 7.5, MARGIN + 8.5, { align: "center" });
   }
 
   // Company Info
   doc.setTextColor(15, 23, 42); // slate-900
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text("Padma AWT Rest House", MARGIN + 30, MARGIN + 10);
+  doc.setFontSize(16);
+  doc.text("Padma AWT Rest House", MARGIN + 20, MARGIN + 6);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(100, 116, 139); // slate-500
-  doc.text("Inventory & Consumption Report", MARGIN + 30, MARGIN + 16);
-  doc.text("Official Record Document", MARGIN + 30, MARGIN + 21);
+  doc.text("Inventory & Consumption Report - Official Record Document", MARGIN + 20, MARGIN + 12);
 
   // Header Divider
   doc.setDrawColor(226, 232, 240); // slate-200
   doc.setLineWidth(0.5);
-  doc.line(MARGIN, MARGIN + 30, PAGE_WIDTH - MARGIN, MARGIN + 30);
+  doc.line(MARGIN, MARGIN + 18, PAGE_WIDTH - MARGIN, MARGIN + 18);
 
   // --- TITLE ---
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("MONTHLY INVENTORY REPORT", PAGE_WIDTH / 2, MARGIN + 42, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text("MONTHLY INVENTORY REPORT", PAGE_WIDTH / 2, MARGIN + 26, { align: 'center' });
 
   // Report Info
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Date: ${new Date().toLocaleDateString()}`, MARGIN, MARGIN + 52);
-  doc.text(`Generated By: ${metrics.generatedBy}`, PAGE_WIDTH - MARGIN, MARGIN + 52, { align: 'right' });
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, MARGIN, MARGIN + 32);
+  doc.text(`Generated By: ${metrics.generatedBy}`, PAGE_WIDTH - MARGIN, MARGIN + 32, { align: 'right' });
 
-  let currentY = MARGIN + 65;
+  let currentY = MARGIN + 40;
 
   const drawTable = (title: string, data: any) => {
     // Section Title
@@ -434,71 +409,48 @@ export const downloadDailyWorksPDF = async (works: PDFDailyWorkData[], generated
 
   const PAGE_WIDTH = doc.internal.pageSize.getWidth();
   const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
-  const MARGIN = 20;
-
-  // Helper to load image
-  const loadImage = (url: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width || 100;
-        canvas.height = img.height || 100;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } else {
-          reject(new Error('Canvas context not available'));
-        }
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
-  };
+  const MARGIN = 15;
 
   // --- HEADER ---
   try {
     const logoBase64 = await loadImage(logoImgSrc);
-    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 25, 25);
+    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 15, 15);
   } catch (e) {
     console.warn('Could not load logo', e);
     doc.setFillColor(30, 64, 175); // Primary blue
-    doc.rect(MARGIN, MARGIN, 25, 25, 'F');
+    doc.rect(MARGIN, MARGIN, 15, 15, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text("LOGO", MARGIN + 12.5, MARGIN + 14, { align: "center" });
+    doc.setFontSize(8);
+    doc.text("LOGO", MARGIN + 7.5, MARGIN + 8.5, { align: "center" });
   }
 
   // Company Info
   doc.setTextColor(15, 23, 42); // slate-900
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text("Padma AWT Rest House", MARGIN + 30, MARGIN + 10);
+  doc.setFontSize(16);
+  doc.text("Padma AWT Rest House", MARGIN + 20, MARGIN + 6);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(100, 116, 139); // slate-500
-  doc.text("Daily IT Department Works", MARGIN + 30, MARGIN + 16);
-  doc.text("Official Record Document", MARGIN + 30, MARGIN + 21);
+  doc.text("Daily IT Department Works - Official Record Document", MARGIN + 20, MARGIN + 12);
 
   // Header Divider
   doc.setDrawColor(226, 232, 240); // slate-200
   doc.setLineWidth(0.5);
-  doc.line(MARGIN, MARGIN + 30, PAGE_WIDTH - MARGIN, MARGIN + 30);
+  doc.line(MARGIN, MARGIN + 18, PAGE_WIDTH - MARGIN, MARGIN + 18);
 
   // --- TITLE ---
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("DAILY IT DEPARTMENT WORKS", PAGE_WIDTH / 2, MARGIN + 42, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text("DAILY IT DEPARTMENT WORKS", PAGE_WIDTH / 2, MARGIN + 26, { align: 'center' });
 
   // Report Info
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Date: ${new Date().toLocaleDateString()}`, MARGIN, MARGIN + 52);
-  doc.text(`Generated By: ${generatedBy}`, PAGE_WIDTH - MARGIN, MARGIN + 52, { align: 'right' });
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, MARGIN, MARGIN + 32);
+  doc.text(`Generated By: ${generatedBy}`, PAGE_WIDTH - MARGIN, MARGIN + 32, { align: 'right' });
 
   // --- TABLE ---
   const tableData = works.map(w => [
@@ -513,7 +465,7 @@ export const downloadDailyWorksPDF = async (works: PDFDailyWorkData[], generated
   ]);
 
   autoTable(doc, {
-    startY: MARGIN + 60,
+    startY: MARGIN + 36,
     head: [['Task Title', 'Status', 'Date', 'Time', 'Reason', 'Times Needed', 'Remarks', 'Created']],
     body: tableData,
     theme: 'grid',
@@ -534,10 +486,10 @@ export const downloadDailyWorksPDF = async (works: PDFDailyWorkData[], generated
 
   // --- SIGNATURES ---
   // @ts-ignore
-  let finalY = doc.lastAutoTable.finalY + 30;
+  let finalY = doc.lastAutoTable.finalY + 20;
   let signatureY = finalY;
   
-  if (finalY > PAGE_HEIGHT - 45) {
+  if (finalY > PAGE_HEIGHT - 30) {
     doc.addPage();
     signatureY = MARGIN + 20;
   }
@@ -583,72 +535,49 @@ export const downloadInventoryPDF = async (type: 'items' | 'assets', data: any[]
 
   const PAGE_WIDTH = doc.internal.pageSize.getWidth();
   const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
-  const MARGIN = 20;
-
-  // Helper to load image
-  const loadImage = (url: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width || 100;
-        canvas.height = img.height || 100;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } else {
-          reject(new Error('Canvas context not available'));
-        }
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
-  };
+  const MARGIN = 15;
 
   // --- HEADER ---
   try {
     const logoBase64 = await loadImage(logoImgSrc);
-    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 25, 25);
+    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 15, 15);
   } catch (e) {
     console.warn('Could not load logo', e);
     doc.setFillColor(30, 64, 175); // Primary blue
-    doc.rect(MARGIN, MARGIN, 25, 25, 'F');
+    doc.rect(MARGIN, MARGIN, 15, 15, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text("LOGO", MARGIN + 12.5, MARGIN + 14, { align: "center" });
+    doc.setFontSize(8);
+    doc.text("LOGO", MARGIN + 7.5, MARGIN + 8.5, { align: "center" });
   }
 
   // Company Info
   doc.setTextColor(15, 23, 42); // slate-900
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text("Padma AWT Rest House", MARGIN + 30, MARGIN + 10);
+  doc.setFontSize(16);
+  doc.text("Padma AWT Rest House", MARGIN + 20, MARGIN + 6);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(100, 116, 139); // slate-500
-  doc.text("IT Department Inventory", MARGIN + 30, MARGIN + 16);
-  doc.text("Official Record Document", MARGIN + 30, MARGIN + 21);
+  doc.text("IT Department Inventory - Official Record Document", MARGIN + 20, MARGIN + 12);
 
   // Header Divider
   doc.setDrawColor(226, 232, 240); // slate-200
   doc.setLineWidth(0.5);
-  doc.line(MARGIN, MARGIN + 30, PAGE_WIDTH - MARGIN, MARGIN + 30);
+  doc.line(MARGIN, MARGIN + 18, PAGE_WIDTH - MARGIN, MARGIN + 18);
 
   // --- TITLE ---
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
+  doc.setFontSize(12);
   const title = type === 'items' ? 'ITEM INVENTORY REPORT' : 'ASSET INVENTORY REPORT';
-  doc.text(title, PAGE_WIDTH / 2, MARGIN + 42, { align: 'center' });
+  doc.text(title, PAGE_WIDTH / 2, MARGIN + 26, { align: 'center' });
 
   // Report Info
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Date: ${new Date().toLocaleDateString()}`, MARGIN, MARGIN + 52);
-  doc.text(`Generated By: ${generatedBy}`, PAGE_WIDTH - MARGIN, MARGIN + 52, { align: 'right' });
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, MARGIN, MARGIN + 32);
+  doc.text(`Generated By: ${generatedBy}`, PAGE_WIDTH - MARGIN, MARGIN + 32, { align: 'right' });
 
   // --- TABLE ---
   let head: string[][] = [];
@@ -696,7 +625,7 @@ export const downloadInventoryPDF = async (type: 'items' | 'assets', data: any[]
   }
 
   autoTable(doc, {
-    startY: MARGIN + 60,
+    startY: MARGIN + 36,
     head,
     body,
     theme: 'grid',
@@ -708,10 +637,10 @@ export const downloadInventoryPDF = async (type: 'items' | 'assets', data: any[]
 
   // --- SIGNATURES ---
   // @ts-ignore
-  let finalY = doc.lastAutoTable.finalY + 30;
+  let finalY = doc.lastAutoTable.finalY + 20;
   let signatureY = finalY;
   
-  if (finalY > PAGE_HEIGHT - 45) {
+  if (finalY > PAGE_HEIGHT - 30) {
     doc.addPage();
     signatureY = MARGIN + 20;
   }
@@ -746,4 +675,148 @@ export const downloadInventoryPDF = async (type: 'items' | 'assets', data: any[]
 
   // Save PDF
   doc.save(`${type === 'items' ? 'Item' : 'Asset'}_Inventory_${new Date().toISOString().split('T')[0]}.pdf`);
+};
+
+export interface MonthlyAttendanceData {
+  employeeId: string;
+  name: string;
+  department: string;
+  presentDays: number;
+  absentDays: number;
+  lateDays: number;
+  totalDays: number;
+}
+
+export const downloadMonthlyAttendancePDF = async (
+  month: string,
+  department: string,
+  data: MonthlyAttendanceData[],
+  generatedBy: string
+) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const PAGE_WIDTH = doc.internal.pageSize.getWidth();
+  const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
+  const MARGIN = 15;
+
+  // --- HEADER ---
+  try {
+    const logoBase64 = await loadImage(logoImgSrc);
+    doc.addImage(logoBase64, 'PNG', MARGIN, MARGIN, 15, 15);
+  } catch (e) {
+    console.warn('Could not load logo', e);
+    doc.setFillColor(30, 64, 175); // Primary blue
+    doc.rect(MARGIN, MARGIN, 15, 15, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text("LOGO", MARGIN + 7.5, MARGIN + 8.5, { align: "center" });
+  }
+
+  // Company Info
+  doc.setTextColor(15, 23, 42); // slate-900
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("Padma AWT Rest House", MARGIN + 20, MARGIN + 6);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139); // slate-500
+  doc.text("Monthly Attendance Report - Official Record Document", MARGIN + 20, MARGIN + 12);
+
+  // Header Divider
+  doc.setDrawColor(226, 232, 240); // slate-200
+  doc.setLineWidth(0.5);
+  doc.line(MARGIN, MARGIN + 18, PAGE_WIDTH - MARGIN, MARGIN + 18);
+
+  // --- TITLE ---
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("MONTHLY ATTENDANCE REPORT", PAGE_WIDTH / 2, MARGIN + 26, { align: 'center' });
+
+  // Report Info
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  
+  const formattedMonth = new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  doc.text(`Month: ${formattedMonth}`, MARGIN, MARGIN + 32);
+  doc.text(`Department: ${department || 'All Departments'}`, MARGIN, MARGIN + 37);
+  doc.text(`Generated By: ${generatedBy}`, PAGE_WIDTH - MARGIN, MARGIN + 32, { align: 'right' });
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, PAGE_WIDTH - MARGIN, MARGIN + 37, { align: 'right' });
+
+  // --- TABLE ---
+  const head = [['Employee ID', 'Name', 'Department', 'Present', 'Absent', 'Late', 'Total Days']];
+  const body = data.map(emp => [
+    emp.employeeId,
+    emp.name,
+    emp.department || '-',
+    emp.presentDays.toString(),
+    emp.absentDays.toString(),
+    emp.lateDays.toString(),
+    emp.totalDays.toString()
+  ]);
+
+  autoTable(doc, {
+    startY: MARGIN + 42,
+    head,
+    body,
+    theme: 'grid',
+    headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+    styles: { fontSize: 8, cellPadding: 3 },
+    columnStyles: {
+      0: { cellWidth: 25 },
+      1: { cellWidth: 45 },
+      2: { cellWidth: 35 },
+      3: { cellWidth: 20, halign: 'center' },
+      4: { cellWidth: 20, halign: 'center' },
+      5: { cellWidth: 20, halign: 'center' },
+      6: { cellWidth: 20, halign: 'center' }
+    },
+    margin: { left: MARGIN, right: MARGIN },
+  });
+
+  // --- SIGNATURES ---
+  // @ts-ignore
+  let finalY = doc.lastAutoTable.finalY + 20;
+  let signatureY = finalY;
+  
+  if (finalY > PAGE_HEIGHT - 30) {
+    doc.addPage();
+    signatureY = MARGIN + 20;
+  }
+
+  const authX = PAGE_WIDTH - MARGIN - 60;
+  doc.setDrawColor(15, 23, 42);
+  doc.line(authX, signatureY, PAGE_WIDTH - MARGIN, signatureY);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Authorized Signatory", authX, signatureY + 5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text("HR Department / Admin", authX, signatureY + 10);
+
+  // --- FOOTER ---
+  const footerY = PAGE_HEIGHT - 10;
+  
+  // Add footer to all pages
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(226, 232, 240);
+    doc.line(MARGIN, footerY - 5, PAGE_WIDTH - MARGIN, footerY - 5);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text("Padma ID Manager - Official Report", MARGIN, footerY);
+    doc.text(`Page ${i} of ${pageCount} - Generated on: ${new Date().toLocaleDateString()}`, PAGE_WIDTH - MARGIN, footerY, { align: 'right' });
+  }
+
+  // Save PDF
+  doc.save(`Monthly_Attendance_${month}_${department || 'All'}.pdf`);
 };

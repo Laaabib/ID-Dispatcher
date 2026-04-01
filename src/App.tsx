@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -14,6 +15,8 @@ import NametagForm from './pages/NametagForm';
 import NametagAdmin from './pages/NametagAdmin';
 import DailyWorksPage from './pages/DailyWorksPage';
 import InventoryManagement from './pages/InventoryManagement';
+import Employees from './pages/Employees';
+import Attendance from './pages/Attendance';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -35,6 +38,7 @@ export default function App() {
       <ThemeProvider defaultTheme="dark">
         <AuthProvider>
           <BrowserRouter>
+            <Toaster position="top-right" richColors />
             <Routes>
               <Route path="/login" element={<Login />} />
               
@@ -52,6 +56,8 @@ export default function App() {
                 <Route path="nametag-admin" element={<NametagAdmin />} />
                 <Route path="daily-works" element={<DailyWorksPage />} />
                 <Route path="inventory" element={<InventoryManagement />} />
+                <Route path="employees" element={<Employees />} />
+                <Route path="attendance" element={<Attendance />} />
               </Route>
             </Routes>
           </BrowserRouter>

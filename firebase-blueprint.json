@@ -223,6 +223,38 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "category", "createdAt", "updatedAt"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "An employee record.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "department": { "type": "string" },
+        "designation": { "type": "string" },
+        "joiningDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "employeeId", "department", "designation", "status", "createdAt", "updatedAt"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "A daily attendance record for an employee.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "date": { "type": "string" },
+        "checkInTime": { "type": "string" },
+        "checkOutTime": { "type": "string" },
+        "status": { "type": "string", "enum": ["Present", "Absent", "Leave", "Half Day"] },
+        "remarks": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employeeId", "date", "status", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -261,6 +293,18 @@
         "$ref": "#/entities/AssetInventory"
       },
       "description": "Stores asset inventory."
+    },
+    "employees/{employeeId}": {
+      "schema": {
+        "$ref": "#/entities/Employee"
+      },
+      "description": "Stores employee records."
+    },
+    "attendance/{attendanceId}": {
+      "schema": {
+        "$ref": "#/entities/Attendance"
+      },
+      "description": "Stores daily attendance records."
     }
   }
 }

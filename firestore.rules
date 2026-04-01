@@ -167,6 +167,32 @@ service cloud.firestore {
              isValidDateString(data.updatedAt);
     }
 
+    function isValidEmployee(data) {
+      return hasOnlyAllowedFields(['name', 'employeeId', 'department', 'designation', 'joiningDate', 'status', 'userId', 'createdAt', 'updatedAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.employeeId is string && data.employeeId.size() > 0 && data.employeeId.size() <= 50 &&
+             data.department is string && data.department.size() <= 100 &&
+             data.designation is string && data.designation.size() <= 100 &&
+             (!('joiningDate' in data) || (data.joiningDate is string && data.joiningDate.size() <= 50)) &&
+             data.status in ['active', 'inactive'] &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt);
+    }
+
+    function isValidAttendance(data) {
+      return hasOnlyAllowedFields(['employeeId', 'userId', 'date', 'checkInTime', 'checkOutTime', 'status', 'remarks', 'createdAt', 'updatedAt']) &&
+             data.employeeId is string && data.employeeId.size() > 0 && data.employeeId.size() <= 50 &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
+             (!('checkInTime' in data) || (data.checkInTime is string && data.checkInTime.size() <= 50)) &&
+             (!('checkOutTime' in data) || (data.checkOutTime is string && data.checkOutTime.size() <= 50)) &&
+             data.status in ['Present', 'Absent', 'Leave', 'Half Day'] &&
+             (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt);
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -267,6 +293,20 @@ service cloud.firestore {
       allow read: if isSuperAdmin();
       allow create: if isSuperAdmin() && isValidAssetInventory(request.resource.data);
       allow update: if isSuperAdmin() && isValidAssetInventory(request.resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() && isValidEmployee(request.resource.data);
+      allow update: if isSuperAdmin() && isValidEmployee(request.resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidAttendance(request.resource.data);
+      allow update: if isAuthenticated() && isValidAttendance(request.resource.data);
       allow delete: if isSuperAdmin();
     }
   }
