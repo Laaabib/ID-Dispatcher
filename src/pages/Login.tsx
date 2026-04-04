@@ -15,14 +15,32 @@ export default function Login() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // CAPTCHA State
+  const [captchaNum1, setCaptchaNum1] = useState(Math.floor(Math.random() * 10) + 1);
+  const [captchaNum2, setCaptchaNum2] = useState(Math.floor(Math.random() * 10) + 1);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
 
   if (user) {
     return <Navigate to="/" replace />;
   }
 
+  const refreshCaptcha = () => {
+    setCaptchaNum1(Math.floor(Math.random() * 10) + 1);
+    setCaptchaNum2(Math.floor(Math.random() * 10) + 1);
+    setCaptchaAnswer('');
+  };
+
   const handleEmployeeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
+      setError('Incorrect CAPTCHA answer. Please try again.');
+      refreshCaptcha();
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -40,6 +58,7 @@ export default function Login() {
       } else {
         setError(err.message || 'An error occurred during authentication');
       }
+      refreshCaptcha();
     } finally {
       setLoading(false);
     }
@@ -177,6 +196,24 @@ export default function Login() {
                         onChange={(e) => setEmployeeId(e.target.value.toUpperCase())}
                         required
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="captcha" className="dark:text-slate-300">Security Check: What is {captchaNum1} + {captchaNum2}?</Label>
+                    <div className="flex gap-3">
+                      <Input 
+                        id="captcha" 
+                        type="number"
+                        placeholder="Answer" 
+                        className="dark:bg-slate-800/50 dark:border-slate-700 dark:text-white dark:placeholder-slate-500"
+                        value={captchaAnswer}
+                        onChange={(e) => setCaptchaAnswer(e.target.value)}
+                        required
+                      />
+                      <Button type="button" variant="outline" onClick={refreshCaptcha} className="px-3 shrink-0 dark:border-slate-700 dark:text-slate-300">
+                        Refresh
+                      </Button>
                     </div>
                   </div>
 
