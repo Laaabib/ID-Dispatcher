@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+
+export interface AppNotification {
+  id: string;
+  type: 'id_card' | 'nametag';
+  name: string;
+  status: string;
+  createdAt: string;
+}
 
 const playNotificationSound = () => {
   try {
@@ -34,22 +42,36 @@ export function useAdminNotifications() {
   const isInitialLoadId = useRef(true);
   const isInitialLoadNametag = useRef(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [recentNotifications, setRecentNotifications] = useState<AppNotification[]>([]);
 
   useEffect(() => {
     if (!role || !['admin', 'admin_approver', 'it_approver'].includes(role)) return;
 
     let idCount = 0;
     let nametagCount = 0;
+    let pendingIds: AppNotification[] = [];
+    let pendingNametags: AppNotification[] = [];
 
-    const updateCount = () => {
+    const updateCountAndNotifications = () => {
       setUnreadCount(idCount + nametagCount);
+      const combined = [...pendingIds, ...pendingNametags].sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      setRecentNotifications(combined.slice(0, 10)); // Keep top 10
     };
 
     // Listen for new ID Card requests
     const qId = query(collection(db, 'applications'), where('status', '==', 'Pending'));
     const unsubId = onSnapshot(qId, (snapshot) => {
       idCount = snapshot.docs.length;
-      updateCount();
+      pendingIds = snapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'id_card',
+        name: doc.data().name,
+        status: doc.data().status,
+        createdAt: doc.data().createdAt
+      }));
+      updateCountAndNotifications();
       
       if (isInitialLoadId.current) {
         isInitialLoadId.current = false;
@@ -72,7 +94,14 @@ export function useAdminNotifications() {
     const qNametag = query(collection(db, 'nametags'), where('status', '==', 'Pending'));
     const unsubNametag = onSnapshot(qNametag, (snapshot) => {
       nametagCount = snapshot.docs.length;
-      updateCount();
+      pendingNametags = snapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'nametag',
+        name: doc.data().name,
+        status: doc.data().status,
+        createdAt: doc.data().createdAt
+      }));
+      updateCountAndNotifications();
       
       if (isInitialLoadNametag.current) {
         isInitialLoadNametag.current = false;
@@ -97,5 +126,5 @@ export function useAdminNotifications() {
     };
   }, [role]);
 
-  return { unreadCount };
+  return { unreadCount, recentNotifications };
 }

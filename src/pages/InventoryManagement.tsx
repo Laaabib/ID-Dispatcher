@@ -7,7 +7,6 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download, ArrowDownToLine, ArrowUpFromLine, History } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { downloadInventoryPDF, downloadInOutReportPDF } from '../lib/pdf';
 
 interface ItemInventory {
   id: string;
@@ -305,22 +304,6 @@ export default function InventoryManagement() {
     reader.readAsBinaryString(file);
   };
 
-  const handleExportPDF = async () => {
-    if (!user) return;
-    const userName = user.displayName || user.email || 'Admin';
-    if (activeTab === 'items') {
-      await downloadInventoryPDF('items', filteredItems, userName);
-    } else {
-      await downloadInventoryPDF('assets', filteredAssets, userName);
-    }
-  };
-
-  const handleExportInOutReport = async () => {
-    if (!user) return;
-    const userName = user.displayName || user.email || 'Admin';
-    await downloadInOutReportPDF(transactions, userName);
-  };
-
   const handleDownloadTemplate = () => {
     let headers = [];
     let fileName = '';
@@ -361,10 +344,14 @@ export default function InventoryManagement() {
     const matchesCategory = selectedCategory ? asset.category === selectedCategory : true;
     
     let matchesFilter = true;
+    const assignedToStore = asset.assignedTo?.toLowerCase().trim() === 'in store' || 
+                            asset.assignedTo?.toLowerCase().trim() === 'in-store' || 
+                            asset.assignedTo?.toLowerCase().trim() === 'instore';
+
     if (assetFilter === 'in_store') {
-      matchesFilter = !asset.assignedTo && asset.status !== 'In Use';
+      matchesFilter = (!asset.assignedTo || assignedToStore) && asset.status !== 'In Use';
     } else if (assetFilter === 'used') {
-      matchesFilter = !!asset.assignedTo || asset.status === 'In Use';
+      matchesFilter = (!!asset.assignedTo && !assignedToStore) || asset.status === 'In Use';
     }
     
     return matchesSearch && matchesCategory && matchesFilter;
@@ -411,24 +398,6 @@ export default function InventoryManagement() {
           >
             <Upload className="w-4 h-4" />
             Import
-          </Button>
-          {activeTab === 'items' && (
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={handleExportInOutReport}
-            >
-              <History className="w-4 h-4" />
-              In/Out Report
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            className="gap-2"
-            onClick={handleExportPDF}
-          >
-            <FileText className="w-4 h-4" />
-            Export {activeTab === 'items' ? 'Items' : assetFilter === 'in_store' ? 'In Store' : assetFilter === 'used' ? 'Used Assets' : 'Assets'}
           </Button>
           <Button onClick={() => setIsAdding(!isAdding)} className="gap-2">
             <Plus className="w-4 h-4" />
@@ -609,58 +578,90 @@ export default function InventoryManagement() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {activeTab === 'items' ? (
                 filteredItems.length > 0 ? (
-                  filteredItems.map(item => (
-                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{item.name}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          {item.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{item.quantity}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{item.unit || '-'}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" title="Goods In" onClick={() => setTransactionModal({isOpen: true, type: 'in', item})} className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-                            <ArrowDownToLine className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" title="Goods Out" onClick={() => setTransactionModal({isOpen: true, type: 'out', item})} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
-                            <ArrowUpFromLine className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                  Object.entries(
+                    filteredItems.reduce((acc, item) => {
+                      const cat = item.category || 'Uncategorized';
+                      if (!acc[cat]) acc[cat] = [];
+                      acc[cat].push(item);
+                      return acc;
+                    }, {} as Record<string, ItemInventory[]>)
+                  ).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryItems]) => (
+                    <React.Fragment key={category}>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80">
+                        <td colSpan={6} className="px-6 py-2 font-semibold text-slate-700 dark:text-slate-300 text-sm">
+                          {category}
+                        </td>
+                      </tr>
+                      {categoryItems.map(item => (
+                        <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white pl-10">{item.name}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {item.category}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{item.quantity}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{item.unit || '-'}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" title="Goods In" onClick={() => setTransactionModal({isOpen: true, type: 'in', item})} className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                <ArrowDownToLine className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" title="Goods Out" onClick={() => setTransactionModal({isOpen: true, type: 'out', item})} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+                                <ArrowUpFromLine className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   ))
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
-                      No items found.
+                      No items found
                     </td>
                   </tr>
                 )
               ) : (
                 filteredAssets.length > 0 ? (
-                  filteredAssets.map(asset => (
-                    <tr key={asset.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{asset.name}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          {asset.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-mono text-xs">{asset.serialNumber || '-'}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{asset.assignedTo || '-'}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{asset.status || '-'}</td>
-                      <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteAsset(asset.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    </tr>
+                  Object.entries(
+                    filteredAssets.reduce((acc, asset) => {
+                      const cat = asset.category || 'Uncategorized';
+                      if (!acc[cat]) acc[cat] = [];
+                      acc[cat].push(asset);
+                      return acc;
+                    }, {} as Record<string, AssetInventory[]>)
+                  ).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryAssets]) => (
+                    <React.Fragment key={category}>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80">
+                        <td colSpan={6} className="px-6 py-2 font-semibold text-slate-700 dark:text-slate-300 text-sm">
+                          {category}
+                        </td>
+                      </tr>
+                      {categoryAssets.map(asset => (
+                        <tr key={asset.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white pl-10">{asset.name}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {asset.category}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-mono text-xs">{asset.serialNumber || '-'}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{asset.assignedTo || '-'}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{asset.status || '-'}</td>
+                          <td className="px-6 py-4 text-right">
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteAsset(asset.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   ))
                 ) : (
                   <tr>

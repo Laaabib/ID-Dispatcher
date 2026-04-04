@@ -566,60 +566,117 @@ export const downloadInventoryPDF = async (type: 'items' | 'assets', data: any[]
   );
 
   // --- TABLE ---
-  let head: string[][] = [];
-  let body: any[][] = [];
   let columnStyles: any = {};
 
   if (type === 'items') {
-    head = [['Name', 'Category', 'Quantity', 'Unit', 'Remarks', 'Created']];
-    body = data.map(item => [
-      item.name,
-      item.category,
-      item.quantity.toString(),
-      item.unit || '-',
-      item.remarks || '-',
-      new Date(item.createdAt).toLocaleDateString()
-    ]);
+    const head = [['Name', 'Quantity', 'Unit', 'Remarks', 'Created']];
     columnStyles = {
-      0: { cellWidth: 60 },
-      1: { cellWidth: 40 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 80 },
-      5: { cellWidth: 30 }
+      0: { cellWidth: 70 },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 90 },
+      4: { cellWidth: 30 }
     };
+
+    // Group items by category
+    const groupedData = data.reduce((acc, item) => {
+      const cat = item.category || 'Uncategorized';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    Object.keys(groupedData).sort().forEach((category, index) => {
+      if (index > 0) {
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+        if (currentY > PAGE_HEIGHT - 40) {
+          doc.addPage();
+          currentY = MARGIN + 10;
+        }
+      } else {
+        currentY += 5;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(30, 64, 175);
+      doc.text(`Category: ${category}`, MARGIN, currentY);
+
+      const body = groupedData[category].map(item => [
+        item.name,
+        item.quantity.toString(),
+        item.unit || '-',
+        item.remarks || '-',
+        new Date(item.createdAt).toLocaleDateString()
+      ]);
+
+      autoTable(doc, {
+        startY: currentY + 5,
+        head,
+        body,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 8, cellPadding: 3 },
+        columnStyles,
+        margin: { left: MARGIN, right: MARGIN },
+      });
+    });
   } else {
-    head = [['Name', 'Category', 'Serial Number', 'Assigned To', 'Status', 'Remarks', 'Created']];
-    body = data.map(asset => [
-      asset.name,
-      asset.category,
-      asset.serialNumber || '-',
-      asset.assignedTo || '-',
-      asset.status || '-',
-      asset.remarks || '-',
-      new Date(asset.createdAt).toLocaleDateString()
-    ]);
+    const head = [['Name', 'Serial Number', 'Assigned To', 'Status', 'Remarks', 'Created']];
     columnStyles = {
       0: { cellWidth: 50 },
-      1: { cellWidth: 30 },
+      1: { cellWidth: 40 },
       2: { cellWidth: 40 },
-      3: { cellWidth: 40 },
-      4: { cellWidth: 20 },
-      5: { cellWidth: 50 },
-      6: { cellWidth: 20 }
+      3: { cellWidth: 20 },
+      4: { cellWidth: 50 },
+      5: { cellWidth: 20 }
     };
-  }
 
-  autoTable(doc, {
-    startY: currentY + 5,
-    head,
-    body,
-    theme: 'grid',
-    headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
-    styles: { fontSize: 8, cellPadding: 3 },
-    columnStyles,
-    margin: { left: MARGIN, right: MARGIN },
-  });
+    // Group assets by category
+    const groupedData = data.reduce((acc, asset) => {
+      const cat = asset.category || 'Uncategorized';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(asset);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    Object.keys(groupedData).sort().forEach((category, index) => {
+      if (index > 0) {
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+        if (currentY > PAGE_HEIGHT - 40) {
+          doc.addPage();
+          currentY = MARGIN + 10;
+        }
+      } else {
+        currentY += 5;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(30, 64, 175);
+      doc.text(`Category: ${category}`, MARGIN, currentY);
+
+      const body = groupedData[category].map(asset => [
+        asset.name,
+        asset.serialNumber || '-',
+        asset.assignedTo || '-',
+        asset.status || '-',
+        asset.remarks || '-',
+        new Date(asset.createdAt).toLocaleDateString()
+      ]);
+
+      autoTable(doc, {
+        startY: currentY + 5,
+        head,
+        body,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 8, cellPadding: 3 },
+        columnStyles,
+        margin: { left: MARGIN, right: MARGIN },
+      });
+    });
+  }
 
   // --- SIGNATURES ---
   // @ts-ignore
