@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import SignatureCanvas from 'react-signature-canvas';
 import { format } from 'date-fns';
 import logoImg from '../assets/Logo.svg';
+import { downloadBlankApplicationPDF } from '../lib/pdf';
+import { Download } from 'lucide-react';
 
 export default function ApplicationForm() {
   const { user } = useAuth();
@@ -183,13 +185,23 @@ export default function ApplicationForm() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-              <Button type="button" variant="outline" onClick={() => navigate('/')} className="shadow-sm">
-                Cancel
+            <div className="flex justify-between items-center gap-3 pt-6 border-t border-slate-100">
+              <Button 
+                type="button" 
+                onClick={downloadBlankApplicationPDF} 
+                className="bg-slate-900 hover:bg-slate-800 text-white shadow-sm flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download Blank Form (PDF)
               </Button>
-              <Button type="submit" disabled={loading} className="shadow-sm">
-                {loading ? 'Submitting...' : 'Submit Application'}
-              </Button>
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={() => navigate('/')} className="shadow-sm">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading} className="shadow-sm">
+                  {loading ? 'Submitting...' : 'Submit Application'}
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAdminNotifications } from '../hooks/useAdminNotifications';
 import { Button } from '../components/ui/button';
-import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2, CheckCircle2, Package, Users, Calendar, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2, CheckCircle2, Package, Users, Calendar, FileText, X, ChevronLeft, ChevronRight, Bell, Eye } from 'lucide-react';
 import AIAssistant from './AIAssistant';
 import logoImg from '../assets/Logo.svg';
 
@@ -28,13 +28,13 @@ const NavItem = ({ to, icon: Icon, children, onClick, isCollapsed }: { to: strin
 
 export default function Layout() {
   const { user, role, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, colorblind, setColorblind } = useTheme();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Initialize admin notifications
-  useAdminNotifications();
+  const { unreadCount } = useAdminNotifications() || { unreadCount: 0 };
 
   const handleLogout = async () => {
     await logout();
@@ -43,6 +43,10 @@ export default function Layout() {
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const toggleColorblind = () => {
+    setColorblind(!colorblind);
   };
 
   const isAdmin = ['admin', 'admin_approver', 'it_approver'].includes(role || '');
@@ -144,7 +148,20 @@ export default function Layout() {
             </Link>
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all">
+            {isAdmin && (
+              <Button variant="ghost" size="icon" className="relative rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all" onClick={() => navigate('/admin-dashboard')}>
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={toggleColorblind} title="Toggle Colorblind Mode" className={`rounded-full hover:scale-110 active:scale-95 transition-all ${colorblind ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+              <Eye className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle Theme" className="rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all">
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
             <div className="lg:hidden">

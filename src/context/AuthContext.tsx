@@ -37,12 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else if (firebaseUser.email === '140001@padmaawt.internal' && currentRole !== 'admin') {
               currentRole = 'admin';
               await updateDoc(userDocRef, { role: currentRole });
+            } else if (firebaseUser.email === 'padmaawtit@gmail.com' && currentRole !== 'admin') {
+              currentRole = 'admin';
+              await updateDoc(userDocRef, { role: currentRole });
             }
             setRole(currentRole);
           } else {
             // Create new user
             let newUserRole = 'user';
-            if (firebaseUser.email === 'padmaawtit@gmail.com' && firebaseUser.emailVerified) {
+            if (firebaseUser.email === 'padmaawtit@gmail.com') {
               newUserRole = 'admin';
             } else if (firebaseUser.email === '140001@padmaawt.internal') {
               newUserRole = 'admin';

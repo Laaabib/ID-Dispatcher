@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download } from 'lucide-react';
+import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download, ArrowDownToLine, ArrowUpFromLine, History } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { downloadInventoryPDF } from '../lib/pdf';
+import { downloadInventoryPDF, downloadInOutReportPDF } from '../lib/pdf';
 
 interface ItemInventory {
   id: string;
@@ -35,10 +35,12 @@ interface AssetInventory {
 export default function InventoryManagement() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'items' | 'assets'>('items');
+  const [assetFilter, setAssetFilter] = useState<'all' | 'in_store' | 'used'>('all');
   
   // Data State
   const [items, setItems] = useState<ItemInventory[]>([]);
   const [assets, setAssets] = useState<AssetInventory[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   
   // Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,6 +64,11 @@ export default function InventoryManagement() {
   const [assetStatus, setAssetStatus] = useState('');
   const [assetRemarks, setAssetRemarks] = useState('');
 
+  // Transaction Modal State
+  const [transactionModal, setTransactionModal] = useState<{isOpen: boolean, type: 'in' | 'out', item: ItemInventory | null}>({isOpen: false, type: 'in', item: null});
+  const [transactionQuantity, setTransactionQuantity] = useState('');
+  const [transactionRemarks, setTransactionRemarks] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -74,6 +81,8 @@ export default function InventoryManagement() {
         ...doc.data()
       })) as ItemInventory[];
       setItems(itemsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      console.error("Error fetching items:", error);
     });
 
     const assetsQuery = query(collection(db, 'asset_inventory'));
@@ -83,11 +92,25 @@ export default function InventoryManagement() {
         ...doc.data()
       })) as AssetInventory[];
       setAssets(assetsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      console.error("Error fetching assets:", error);
+    });
+
+    const transQuery = query(collection(db, 'item_transactions'));
+    const unsubscribeTrans = onSnapshot(transQuery, (snapshot) => {
+      const transData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setTransactions(transData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      console.error("Error fetching transactions:", error);
     });
 
     return () => {
       unsubscribeItems();
       unsubscribeAssets();
+      unsubscribeTrans();
     };
   }, [user]);
 
@@ -164,6 +187,47 @@ export default function InventoryManagement() {
       await deleteDoc(doc(db, 'asset_inventory', id));
     } catch (error) {
       console.error('Error deleting asset:', error);
+    }
+  };
+
+  const handleTransactionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transactionModal.item || !transactionQuantity) return;
+    const qty = Number(transactionQuantity);
+    if (qty <= 0) return;
+    
+    const newQty = transactionModal.type === 'in' 
+      ? transactionModal.item.quantity + qty 
+      : transactionModal.item.quantity - qty;
+      
+    if (newQty < 0) {
+      alert('Not enough stock to perform this operation.');
+      return;
+    }
+    
+    try {
+      const batch = writeBatch(db);
+      const itemRef = doc(db, 'item_inventory', transactionModal.item.id);
+      batch.update(itemRef, { quantity: newQty, updatedAt: new Date().toISOString() });
+      
+      const transRef = doc(collection(db, 'item_transactions'));
+      batch.set(transRef, {
+        itemId: transactionModal.item.id,
+        itemName: transactionModal.item.name,
+        type: transactionModal.type,
+        quantity: qty,
+        remarks: transactionRemarks,
+        user: user?.email || user?.displayName || 'Unknown',
+        createdAt: new Date().toISOString()
+      });
+      
+      await batch.commit();
+      setTransactionModal({isOpen: false, type: 'in', item: null});
+      setTransactionQuantity('');
+      setTransactionRemarks('');
+    } catch (error) {
+      console.error('Error processing transaction:', error);
+      alert('Failed to process transaction.');
     }
   };
 
@@ -251,6 +315,12 @@ export default function InventoryManagement() {
     }
   };
 
+  const handleExportInOutReport = async () => {
+    if (!user) return;
+    const userName = user.displayName || user.email || 'Admin';
+    await downloadInOutReportPDF(transactions, userName);
+  };
+
   const handleDownloadTemplate = () => {
     let headers = [];
     let fileName = '';
@@ -289,7 +359,15 @@ export default function InventoryManagement() {
                           asset.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           asset.serialNumber.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory ? asset.category === selectedCategory : true;
-    return matchesSearch && matchesCategory;
+    
+    let matchesFilter = true;
+    if (assetFilter === 'in_store') {
+      matchesFilter = !asset.assignedTo && asset.status !== 'In Use';
+    } else if (assetFilter === 'used') {
+      matchesFilter = !!asset.assignedTo || asset.status === 'In Use';
+    }
+    
+    return matchesSearch && matchesCategory && matchesFilter;
   });
 
   if (user?.email !== '140001@padmaawt.internal' && user?.email !== 'padmaawtit@gmail.com') {
@@ -334,13 +412,23 @@ export default function InventoryManagement() {
             <Upload className="w-4 h-4" />
             Import
           </Button>
+          {activeTab === 'items' && (
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={handleExportInOutReport}
+            >
+              <History className="w-4 h-4" />
+              In/Out Report
+            </Button>
+          )}
           <Button 
             variant="outline" 
             className="gap-2"
             onClick={handleExportPDF}
           >
             <FileText className="w-4 h-4" />
-            Export PDF
+            Export {activeTab === 'items' ? 'Items' : assetFilter === 'in_store' ? 'In Store' : assetFilter === 'used' ? 'Used Assets' : 'Assets'}
           </Button>
           <Button onClick={() => setIsAdding(!isAdding)} className="gap-2">
             <Plus className="w-4 h-4" />
@@ -373,6 +461,35 @@ export default function InventoryManagement() {
           Asset Inventory
         </button>
       </div>
+
+      {activeTab === 'assets' && (
+        <div className="flex gap-2 mb-4">
+          <Button 
+            variant={assetFilter === 'all' ? 'default' : 'outline'} 
+            size="sm" 
+            onClick={() => setAssetFilter('all')}
+            className="rounded-full"
+          >
+            All Assets
+          </Button>
+          <Button 
+            variant={assetFilter === 'in_store' ? 'default' : 'outline'} 
+            size="sm" 
+            onClick={() => setAssetFilter('in_store')}
+            className="rounded-full"
+          >
+            In Store
+          </Button>
+          <Button 
+            variant={assetFilter === 'used' ? 'default' : 'outline'} 
+            size="sm" 
+            onClick={() => setAssetFilter('used')}
+            className="rounded-full"
+          >
+            Used Assets
+          </Button>
+        </div>
+      )}
 
       {isAdding && (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
@@ -504,9 +621,17 @@ export default function InventoryManagement() {
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{item.unit || '-'}</td>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>
                       <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" title="Goods In" onClick={() => setTransactionModal({isOpen: true, type: 'in', item})} className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                            <ArrowDownToLine className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Goods Out" onClick={() => setTransactionModal({isOpen: true, type: 'out', item})} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+                            <ArrowUpFromLine className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -549,6 +674,57 @@ export default function InventoryManagement() {
           </table>
         </div>
       </div>
+      {transactionModal.isOpen && transactionModal.item && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-6">
+              <h2 className={`text-xl font-bold mb-4 ${transactionModal.type === 'in' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {transactionModal.type === 'in' ? 'Goods In' : 'Goods Out'} - {transactionModal.item.name}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                Current Quantity: <span className="font-bold text-slate-900 dark:text-white">{transactionModal.item.quantity} {transactionModal.item.unit}</span>
+              </p>
+              
+              <form onSubmit={handleTransactionSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="transQty">Quantity to {transactionModal.type === 'in' ? 'Add' : 'Remove'} *</Label>
+                  <Input 
+                    id="transQty" 
+                    type="number" 
+                    min="1"
+                    max={transactionModal.type === 'out' ? transactionModal.item.quantity : undefined}
+                    value={transactionQuantity} 
+                    onChange={e => setTransactionQuantity(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="transRemarks">Remarks</Label>
+                  <Input 
+                    id="transRemarks" 
+                    value={transactionRemarks} 
+                    onChange={e => setTransactionRemarks(e.target.value)} 
+                    placeholder="e.g., Received from supplier, Issued to department..."
+                  />
+                </div>
+                
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={() => {
+                    setTransactionModal({isOpen: false, type: 'in', item: null});
+                    setTransactionQuantity('');
+                    setTransactionRemarks('');
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" className={transactionModal.type === 'in' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'}>
+                    Confirm {transactionModal.type === 'in' ? 'In' : 'Out'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

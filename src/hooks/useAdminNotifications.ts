@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
@@ -33,13 +33,24 @@ export function useAdminNotifications() {
   const { role } = useAuth();
   const isInitialLoadId = useRef(true);
   const isInitialLoadNametag = useRef(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!role || !['admin', 'admin_approver', 'it_approver'].includes(role)) return;
 
+    let idCount = 0;
+    let nametagCount = 0;
+
+    const updateCount = () => {
+      setUnreadCount(idCount + nametagCount);
+    };
+
     // Listen for new ID Card requests
     const qId = query(collection(db, 'applications'), where('status', '==', 'Pending'));
     const unsubId = onSnapshot(qId, (snapshot) => {
+      idCount = snapshot.docs.length;
+      updateCount();
+      
       if (isInitialLoadId.current) {
         isInitialLoadId.current = false;
         return;
@@ -53,11 +64,16 @@ export function useAdminNotifications() {
           duration: 5000,
         });
       }
+    }, (error) => {
+      console.error("Error fetching ID applications:", error);
     });
 
     // Listen for new Nametag requests
     const qNametag = query(collection(db, 'nametags'), where('status', '==', 'Pending'));
     const unsubNametag = onSnapshot(qNametag, (snapshot) => {
+      nametagCount = snapshot.docs.length;
+      updateCount();
+      
       if (isInitialLoadNametag.current) {
         isInitialLoadNametag.current = false;
         return;
@@ -71,6 +87,8 @@ export function useAdminNotifications() {
           duration: 5000,
         });
       }
+    }, (error) => {
+      console.error("Error fetching nametags:", error);
     });
 
     return () => {
@@ -78,4 +96,6 @@ export function useAdminNotifications() {
       unsubNametag();
     };
   }, [role]);
+
+  return { unreadCount };
 }

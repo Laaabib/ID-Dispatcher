@@ -11,11 +11,15 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  colorblind: boolean;
+  setColorblind: (colorblind: boolean) => void;
 };
 
 const initialState: ThemeProviderState = {
   theme: 'system',
   setTheme: () => null,
+  colorblind: false,
+  setColorblind: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -28,6 +32,10 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  );
+  
+  const [colorblind, setColorblind] = useState<boolean>(
+    () => localStorage.getItem(`${storageKey}-colorblind`) === 'true'
   );
 
   useEffect(() => {
@@ -42,11 +50,16 @@ export function ThemeProvider({
         : 'light';
 
       root.classList.add(systemTheme);
-      return;
+    } else {
+      root.classList.add(theme);
     }
-
-    root.classList.add(theme);
-  }, [theme]);
+    
+    if (colorblind) {
+      root.classList.add('colorblind');
+    } else {
+      root.classList.remove('colorblind');
+    }
+  }, [theme, colorblind]);
 
   const value = {
     theme,
@@ -54,6 +67,11 @@ export function ThemeProvider({
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
     },
+    colorblind,
+    setColorblind: (cb: boolean) => {
+      localStorage.setItem(`${storageKey}-colorblind`, String(cb));
+      setColorblind(cb);
+    }
   };
 
   return (

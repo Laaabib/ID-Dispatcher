@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { format } from 'date-fns';
 import { PlusCircle, FileText, Download, Badge as BadgeIcon, CheckCircle2 } from 'lucide-react';
-import { downloadApplicationPDF } from '../lib/pdf';
+import { downloadApplicationPDF, downloadBlankApplicationPDF } from '../lib/pdf';
 import DailyWorks from '../components/DailyWorks';
 
 interface Application {
@@ -108,6 +108,13 @@ export default function Dashboard() {
           <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your ID card and nametag requests</p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <Button 
+            className="gap-2 shadow-sm bg-slate-900 hover:bg-slate-800 text-white" 
+            onClick={() => downloadBlankApplicationPDF()}
+          >
+            <Download className="w-4 h-4" />
+            Blank Form (PDF)
+          </Button>
           <Link to="/apply">
             <Button className="gap-2 shadow-sm" variant="outline">
               <PlusCircle className="w-4 h-4" />

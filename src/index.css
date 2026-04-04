@@ -145,3 +145,42 @@ body {
 .dark canvas, .dark img[alt="Signature"] {
   filter: invert(1) hue-rotate(180deg);
 }
+
+/* Colorblind High Contrast Overrides */
+.colorblind {
+  /* High contrast blue instead of indigo */
+  --color-primary-50: #e0f2fe;
+  --color-primary-100: #bae6fd;
+  --color-primary-200: #7dd3fc;
+  --color-primary-300: #38bdf8;
+  --color-primary-400: #0ea5e9;
+  --color-primary-500: #0284c7;
+  --color-primary-600: #0369a1;
+  --color-primary-700: #075985;
+  --color-primary-800: #0c4a6e;
+  --color-primary-900: #082f49;
+}
+
+.colorblind .text-emerald-600, .colorblind .text-emerald-700 {
+  /* Replace green with high-contrast blue */
+  color: #0284c7 !important;
+}
+.colorblind .bg-emerald-50, .colorblind .bg-emerald-100 {
+  background-color: #e0f2fe !important;
+}
+.colorblind .text-red-600, .colorblind .text-red-700 {
+  /* Replace red with high-contrast orange */
+  color: #d97706 !important;
+}
+.colorblind .bg-red-50, .colorblind .bg-red-100 {
+  background-color: #fef3c7 !important;
+}
+.colorblind .border-red-100, .colorblind .border-red-200 {
+  border-color: #fcd34d !important;
+}
+.colorblind .text-amber-600, .colorblind .text-amber-700 {
+  color: #b45309 !important;
+}
+.colorblind .bg-amber-50, .colorblind .bg-amber-100 {
+  background-color: #ffedd5 !important;
+}

@@ -167,6 +167,17 @@ service cloud.firestore {
              isValidDateString(data.updatedAt);
     }
 
+    function isValidItemTransaction(data) {
+      return hasOnlyAllowedFields(['itemId', 'itemName', 'type', 'quantity', 'remarks', 'user', 'createdAt']) &&
+             data.itemId is string && data.itemId.size() > 0 && data.itemId.size() <= 100 &&
+             data.itemName is string && data.itemName.size() > 0 && data.itemName.size() <= 200 &&
+             data.type in ['in', 'out'] &&
+             data.quantity is number &&
+             (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
+             data.user is string && data.user.size() > 0 && data.user.size() <= 100 &&
+             isValidDateString(data.createdAt);
+    }
+
     function isValidEmployee(data) {
       return hasOnlyAllowedFields(['name', 'employeeId', 'department', 'designation', 'joiningDate', 'status', 'userId', 'createdAt', 'updatedAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
@@ -293,6 +304,13 @@ service cloud.firestore {
       allow read: if isSuperAdmin();
       allow create: if isSuperAdmin() && isValidAssetInventory(request.resource.data);
       allow update: if isSuperAdmin() && isValidAssetInventory(request.resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /item_transactions/{transactionId} {
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin() && isValidItemTransaction(request.resource.data);
+      allow update: if isSuperAdmin() && isValidItemTransaction(request.resource.data);
       allow delete: if isSuperAdmin();
     }
 
