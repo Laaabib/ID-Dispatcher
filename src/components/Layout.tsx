@@ -61,6 +61,9 @@ export default function Layout() {
           <NavItem to="/admin" icon={Shield} onClick={onClick} isCollapsed={isCollapsed}>ID Cards</NavItem>
           <NavItem to="/nametag-admin" icon={BadgeIcon} onClick={onClick} isCollapsed={isCollapsed}>Nametags</NavItem>
           <NavItem to="/employees" icon={Users} onClick={onClick} isCollapsed={isCollapsed}>Employees</NavItem>
+          {role === 'admin' && (
+            <NavItem to="/users" icon={Shield} onClick={onClick} isCollapsed={isCollapsed}>User Roles</NavItem>
+          )}
         </>
       )}
       <NavItem to="/attendance" icon={Calendar} onClick={onClick} isCollapsed={isCollapsed}>Attendance</NavItem>
@@ -69,8 +72,10 @@ export default function Layout() {
       {isSpecialUser && (
         <>
           <NavItem to="/daily-works" icon={CheckCircle2} onClick={onClick} isCollapsed={isCollapsed}>Daily Works</NavItem>
-          <NavItem to="/inventory" icon={Package} onClick={onClick} isCollapsed={isCollapsed}>Inventory</NavItem>
         </>
+      )}
+      {(isSpecialUser || role === 'admin' || role === 'inventory_manager') && (
+        <NavItem to="/inventory" icon={Package} onClick={onClick} isCollapsed={isCollapsed}>Inventory</NavItem>
       )}
     </>
   );

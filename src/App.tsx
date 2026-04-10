@@ -17,6 +17,7 @@ import DailyWorksPage from './pages/DailyWorksPage';
 import InventoryManagement from './pages/InventoryManagement';
 import Employees from './pages/Employees';
 import Attendance from './pages/Attendance';
+import UserManagement from './pages/UserManagement';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ export default function App() {
                 <Route path="inventory" element={<InventoryManagement />} />
                 <Route path="employees" element={<Employees />} />
                 <Route path="attendance" element={<Attendance />} />
+                <Route path="users" element={<UserManagement />} />
               </Route>
             </Routes>
           </BrowserRouter>

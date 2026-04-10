@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -19,7 +19,13 @@ export default function StoreReports() {
   useEffect(() => {
     if (!user) return;
 
-    const itemsQuery = query(collection(db, 'item_inventory'));
+    const isSuperAdmin = role === 'admin' || user.email === '140001@padmaawt.internal' || user.email === 'padmaawtit@gmail.com';
+
+    let itemsQuery = query(collection(db, 'item_inventory'));
+    if (!isSuperAdmin) {
+      itemsQuery = query(collection(db, 'item_inventory'), where('userId', '==', user.uid));
+    }
+    
     const unsubscribeItems = onSnapshot(itemsQuery, (snapshot) => {
       const itemsData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -30,7 +36,11 @@ export default function StoreReports() {
       handleFirestoreError(error, OperationType.LIST, 'item_inventory');
     });
 
-    const assetsQuery = query(collection(db, 'asset_inventory'));
+    let assetsQuery = query(collection(db, 'asset_inventory'));
+    if (!isSuperAdmin) {
+      assetsQuery = query(collection(db, 'asset_inventory'), where('userId', '==', user.uid));
+    }
+    
     const unsubscribeAssets = onSnapshot(assetsQuery, (snapshot) => {
       const assetsData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -41,7 +51,11 @@ export default function StoreReports() {
       handleFirestoreError(error, OperationType.LIST, 'asset_inventory');
     });
 
-    const transQuery = query(collection(db, 'item_transactions'));
+    let transQuery = query(collection(db, 'item_transactions'));
+    if (!isSuperAdmin) {
+      transQuery = query(collection(db, 'item_transactions'), where('userId', '==', user.uid));
+    }
+    
     const unsubscribeTrans = onSnapshot(transQuery, (snapshot) => {
       const transData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -57,7 +71,7 @@ export default function StoreReports() {
       unsubscribeAssets();
       unsubscribeTrans();
     };
-  }, [user]);
+  }, [user, role]);
 
   const handleExportItems = async () => {
     if (!user) return;

@@ -18,7 +18,7 @@ export default function AttendanceReports() {
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [myEmployeeIds, setMyEmployeeIds] = useState<string[]>([]);
 
-  const isAdmin = ['admin', 'admin_approver', 'it_approver'].includes(role || '');
+  const isAdmin = ['admin', 'admin_approver', 'it_approver', 'inventory_manager'].includes(role || '');
 
   useEffect(() => {
     // Fetch employees to map IDs to names

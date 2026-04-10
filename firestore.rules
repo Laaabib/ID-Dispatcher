@@ -91,11 +91,17 @@ service cloud.firestore {
     // Domain Validators
     // ===============================================================
 
+    function isInventoryManager() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'inventory_manager';
+    }
+
     function isValidUser(data) {
       return hasOnlyAllowedFields(['name', 'email', 'role', 'createdAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              isValidEmail(data.email) &&
-             data.role in ['admin', 'user', 'admin_approver', 'it_approver'] &&
+             data.role in ['admin', 'user', 'admin_approver', 'it_approver', 'inventory_manager'] &&
              isValidDateString(data.createdAt);
     }
 
@@ -145,36 +151,39 @@ service cloud.firestore {
     }
 
     function isValidItemInventory(data) {
-      return hasOnlyAllowedFields(['name', 'category', 'quantity', 'unit', 'remarks', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['name', 'category', 'quantity', 'unit', 'remarks', 'userId', 'createdAt', 'updatedAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
              data.category is string && data.category.size() <= 100 &&
              data.quantity is number &&
              (!('unit' in data) || (data.unit is string && data.unit.size() <= 50)) &&
              (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
              isValidDateString(data.createdAt) &&
              isValidDateString(data.updatedAt);
     }
 
     function isValidAssetInventory(data) {
-      return hasOnlyAllowedFields(['name', 'category', 'serialNumber', 'assignedTo', 'status', 'remarks', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['name', 'category', 'serialNumber', 'assignedTo', 'status', 'remarks', 'userId', 'createdAt', 'updatedAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
              data.category is string && data.category.size() <= 100 &&
              (!('serialNumber' in data) || (data.serialNumber is string && data.serialNumber.size() <= 100)) &&
              (!('assignedTo' in data) || (data.assignedTo is string && data.assignedTo.size() <= 100)) &&
              (!('status' in data) || (data.status is string && data.status.size() <= 50)) &&
              (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
              isValidDateString(data.createdAt) &&
              isValidDateString(data.updatedAt);
     }
 
     function isValidItemTransaction(data) {
-      return hasOnlyAllowedFields(['itemId', 'itemName', 'type', 'quantity', 'remarks', 'user', 'createdAt']) &&
+      return hasOnlyAllowedFields(['itemId', 'itemName', 'type', 'quantity', 'remarks', 'user', 'userId', 'createdAt']) &&
              data.itemId is string && data.itemId.size() > 0 && data.itemId.size() <= 100 &&
              data.itemName is string && data.itemName.size() > 0 && data.itemName.size() <= 200 &&
              data.type in ['in', 'out'] &&
              data.quantity is number &&
              (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
              data.user is string && data.user.size() > 0 && data.user.size() <= 100 &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
              isValidDateString(data.createdAt);
     }
 
@@ -217,9 +226,11 @@ service cloud.firestore {
                        (request.resource.data.role == 'user' || isSuperAdmin());
                        
       // Users can update their own profile, but cannot change their role unless they are super admin
-      allow update: if isOwner(userId) && 
-                       isValidUser(request.resource.data) && 
-                       (request.resource.data.role == resource.data.role || isSuperAdmin());
+      allow update: if isValidUser(request.resource.data) && 
+                       (
+                         (isOwner(userId) && request.resource.data.role == resource.data.role) || 
+                         isSuperAdmin()
+                       );
                        
       allow delete: if isSuperAdmin();
     }
@@ -294,24 +305,24 @@ service cloud.firestore {
     }
 
     match /item_inventory/{itemId} {
-      allow read: if isSuperAdmin();
-      allow create: if isSuperAdmin() && isValidItemInventory(request.resource.data);
-      allow update: if isSuperAdmin() && isValidItemInventory(request.resource.data);
-      allow delete: if isSuperAdmin();
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isValidItemInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && request.resource.data.userId == request.auth.uid));
+      allow update: if isValidItemInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid));
+      allow delete: if isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid);
     }
 
     match /asset_inventory/{assetId} {
-      allow read: if isSuperAdmin();
-      allow create: if isSuperAdmin() && isValidAssetInventory(request.resource.data);
-      allow update: if isSuperAdmin() && isValidAssetInventory(request.resource.data);
-      allow delete: if isSuperAdmin();
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isValidAssetInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && request.resource.data.userId == request.auth.uid));
+      allow update: if isValidAssetInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid));
+      allow delete: if isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid);
     }
 
     match /item_transactions/{transactionId} {
-      allow read: if isSuperAdmin();
-      allow create: if isSuperAdmin() && isValidItemTransaction(request.resource.data);
-      allow update: if isSuperAdmin() && isValidItemTransaction(request.resource.data);
-      allow delete: if isSuperAdmin();
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isValidItemTransaction(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && request.resource.data.userId == request.auth.uid));
+      allow update: if isValidItemTransaction(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid));
+      allow delete: if isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid);
     }
 
     match /employees/{employeeId} {

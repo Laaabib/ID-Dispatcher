@@ -5,7 +5,7 @@ import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
-  role: 'admin' | 'user' | 'admin_approver' | 'it_approver' | null;
+  role: 'admin' | 'user' | 'admin_approver' | 'it_approver' | 'inventory_manager' | null;
   loading: boolean;
   login: () => Promise<void>;
   loginWithEmployeeId: (employeeId: string) => Promise<void>;
@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<'admin' | 'user' | 'admin_approver' | 'it_approver' | null>(null);
+  const [role, setRole] = useState<'admin' | 'user' | 'admin_approver' | 'it_approver' | 'inventory_manager' | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

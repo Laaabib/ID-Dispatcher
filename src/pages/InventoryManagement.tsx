@@ -32,7 +32,7 @@ interface AssetInventory {
 }
 
 export default function InventoryManagement() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [activeTab, setActiveTab] = useState<'items' | 'assets'>('items');
   const [assetFilter, setAssetFilter] = useState<'all' | 'in_store' | 'used'>('all');
   
@@ -73,12 +73,19 @@ export default function InventoryManagement() {
   useEffect(() => {
     if (!user) return;
 
+    const isSuperAdmin = role === 'admin' || user.email === '140001@padmaawt.internal' || user.email === 'padmaawtit@gmail.com';
+
     const itemsQuery = query(collection(db, 'item_inventory'));
     const unsubscribeItems = onSnapshot(itemsQuery, (snapshot) => {
-      const itemsData = snapshot.docs.map(doc => ({
+      let itemsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as ItemInventory[];
+      
+      if (!isSuperAdmin) {
+        itemsData = itemsData.filter(item => item.userId === user.uid);
+      }
+      
       setItems(itemsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }, (error) => {
       console.error("Error fetching items:", error);
@@ -86,10 +93,15 @@ export default function InventoryManagement() {
 
     const assetsQuery = query(collection(db, 'asset_inventory'));
     const unsubscribeAssets = onSnapshot(assetsQuery, (snapshot) => {
-      const assetsData = snapshot.docs.map(doc => ({
+      let assetsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as AssetInventory[];
+      
+      if (!isSuperAdmin) {
+        assetsData = assetsData.filter(asset => asset.userId === user.uid);
+      }
+      
       setAssets(assetsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }, (error) => {
       console.error("Error fetching assets:", error);
@@ -97,10 +109,15 @@ export default function InventoryManagement() {
 
     const transQuery = query(collection(db, 'item_transactions'));
     const unsubscribeTrans = onSnapshot(transQuery, (snapshot) => {
-      const transData = snapshot.docs.map(doc => ({
+      let transData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      if (!isSuperAdmin) {
+        transData = transData.filter(trans => trans.userId === user.uid);
+      }
+      
       setTransactions(transData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }, (error) => {
       console.error("Error fetching transactions:", error);
@@ -125,6 +142,7 @@ export default function InventoryManagement() {
         quantity: Number(itemQuantity),
         unit: itemUnit,
         remarks: itemRemarks,
+        userId: user?.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -154,6 +172,7 @@ export default function InventoryManagement() {
         assignedTo: assetAssignedTo,
         status: assetStatus,
         remarks: assetRemarks,
+        userId: user?.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -217,6 +236,7 @@ export default function InventoryManagement() {
         quantity: qty,
         remarks: transactionRemarks,
         user: user?.email || user?.displayName || 'Unknown',
+        userId: user?.uid,
         createdAt: new Date().toISOString()
       });
       
@@ -261,6 +281,7 @@ export default function InventoryManagement() {
                 quantity: Number(row.Quantity || 0),
                 unit: String(row.Unit || ''),
                 remarks: String(row.Remarks || ''),
+                userId: user?.uid,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
               });
@@ -278,6 +299,7 @@ export default function InventoryManagement() {
                 assignedTo: String(row['Assigned To'] || row.AssignedTo || ''),
                 status: String(row.Status || ''),
                 remarks: String(row.Remarks || ''),
+                userId: user?.uid,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
               });
@@ -357,7 +379,8 @@ export default function InventoryManagement() {
     return matchesSearch && matchesCategory && matchesFilter;
   });
 
-  if (user?.email !== '140001@padmaawt.internal' && user?.email !== 'padmaawtit@gmail.com') {
+  const isSuperAdmin = role === 'admin' || user?.email === '140001@padmaawt.internal' || user?.email === 'padmaawtit@gmail.com';
+  if (!isSuperAdmin && role !== 'inventory_manager') {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Access Denied</h2>
