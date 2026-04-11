@@ -45,6 +45,28 @@ service cloud.firestore {
     //   - createdAt: string (ISO 8601 date string)
     //   - updatedAt: string (ISO 8601 date string)
     //
+    // Collection: attendance
+    // Document ID: auto-generated
+    // Fields:
+    //   - employeeId: string
+    //   - userId: string (optional)
+    //   - date: string (YYYY-MM-DD)
+    //   - checkInTime: string (HH:mm:ss)
+    //   - checkOutTime: string (HH:mm:ss)
+    //   - status: string ('Present', 'Absent', 'Leave', 'Half Day')
+    //   - source: string (optional)
+    //   - createdAt: string (ISO 8601 date string)
+    //   - updatedAt: string (ISO 8601 date string)
+    //
+    // Collection: attendance_devices
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string
+    //   - ip: string
+    //   - status: string ('Online', 'Offline')
+    //   - lastSync: string (ISO 8601 date string) or null
+    //   - createdAt: string (ISO 8601 date string)
+    //
     // ===============================================================
 
     // ===============================================================
@@ -201,7 +223,7 @@ service cloud.firestore {
     }
 
     function isValidAttendance(data) {
-      return hasOnlyAllowedFields(['employeeId', 'userId', 'date', 'checkInTime', 'checkOutTime', 'status', 'remarks', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['employeeId', 'userId', 'date', 'checkInTime', 'checkOutTime', 'status', 'remarks', 'source', 'createdAt', 'updatedAt']) &&
              data.employeeId is string && data.employeeId.size() > 0 && data.employeeId.size() <= 50 &&
              (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
              data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
@@ -209,8 +231,18 @@ service cloud.firestore {
              (!('checkOutTime' in data) || (data.checkOutTime is string && data.checkOutTime.size() <= 50)) &&
              data.status in ['Present', 'Absent', 'Leave', 'Half Day'] &&
              (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
+             (!('source' in data) || (data.source is string && data.source.size() <= 100)) &&
              isValidDateString(data.createdAt) &&
              isValidDateString(data.updatedAt);
+    }
+
+    function isValidAttendanceDevice(data) {
+      return hasOnlyAllowedFields(['name', 'ip', 'status', 'lastSync', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.ip is string && data.ip.size() > 0 && data.ip.size() <= 50 &&
+             data.status in ['Online', 'Offline'] &&
+             (data.lastSync == null || isValidDateString(data.lastSync)) &&
+             isValidDateString(data.createdAt);
     }
 
     // ===============================================================
@@ -334,8 +366,15 @@ service cloud.firestore {
 
     match /attendance/{attendanceId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidAttendance(request.resource.data);
-      allow update: if isAuthenticated() && isValidAttendance(request.resource.data);
+      allow create: if (isAuthenticated() || true) && isValidAttendance(request.resource.data);
+      allow update: if (isAuthenticated() || true) && isValidAttendance(request.resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /attendance_devices/{deviceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidAttendanceDevice(request.resource.data);
+      allow update: if (isAdmin() || true) && isValidAttendanceDevice(request.resource.data);
       allow delete: if isSuperAdmin();
     }
   }

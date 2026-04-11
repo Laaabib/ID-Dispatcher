@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { format } from 'date-fns';
 import { Navigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { downloadApplicationPDF } from '../lib/pdf';
 import { Download, X, Eye, FileText } from 'lucide-react';
 
@@ -66,6 +67,7 @@ export default function AdminPanel() {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
+      toast.success(`Application status updated to ${newStatus}`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `applications/${id}`);
     } finally {

@@ -7,6 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { format } from 'date-fns';
 import { Navigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Badge as BadgeIcon } from 'lucide-react';
 
 interface Nametag {
@@ -60,6 +61,7 @@ export default function NametagAdmin() {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
+      toast.success(`Nametag status updated to ${newStatus}`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `nametags/${id}`);
     } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, updateDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Plus, Edit2, Trash2, Search, Users, Download, Upload } from 'lucide-react';
@@ -30,8 +30,7 @@ export default function Employees() {
       setEmployees(emps);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching employees:", error);
-      toast.error("Failed to load employees");
+      handleFirestoreError(error, OperationType.LIST, 'employees');
       setLoading(false);
     });
 
@@ -82,8 +81,7 @@ export default function Employees() {
       }
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Error saving employee:", error);
-      toast.error("Failed to save employee");
+      handleFirestoreError(error, editingId ? OperationType.UPDATE : OperationType.CREATE, 'employees');
     }
   };
 
@@ -93,8 +91,7 @@ export default function Employees() {
         await deleteDoc(doc(db, 'employees', id));
         toast.success("Employee deleted successfully");
       } catch (error) {
-        console.error("Error deleting employee:", error);
-        toast.error("Failed to delete employee");
+        handleFirestoreError(error, OperationType.DELETE, 'employees');
       }
     }
   };

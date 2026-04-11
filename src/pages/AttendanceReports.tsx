@@ -85,7 +85,7 @@ export default function AttendanceReports() {
     return matchesSearch && matchesDate && matchesMonth && matchesDept;
   });
 
-  const departments = Array.from(new Set(Object.values(employees).map(e => e.department).filter(Boolean)));
+  const departments = Array.from(new Set(Object.values(employees).map((e: any) => e.department).filter(Boolean)));
 
   const handleExportCSV = () => {
     if (filteredAttendance.length === 0) {

@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { toast } from 'sonner';
 import SignatureCanvas from 'react-signature-canvas';
 import { format } from 'date-fns';
 import logoImg from '../assets/Logo.svg';
@@ -72,10 +73,10 @@ export default function ApplicationForm() {
       };
 
       await addDoc(collection(db, 'applications'), applicationData);
+      toast.success("Application submitted successfully");
       navigate('/');
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'applications');
-      setError('Failed to submit application. Please try again.');
     } finally {
       setLoading(false);
     }

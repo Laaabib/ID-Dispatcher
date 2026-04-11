@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { toast } from 'sonner';
 import logoImg from '../assets/Logo.svg';
 
 export default function NametagForm() {
@@ -44,10 +45,10 @@ export default function NametagForm() {
       };
 
       await addDoc(collection(db, 'nametags'), applicationData);
+      toast.success("Nametag request submitted successfully");
       navigate('/');
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'nametags');
-      setError('Failed to submit nametag request. Please try again.');
     } finally {
       setLoading(false);
     }

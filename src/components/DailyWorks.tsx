@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, X, Download, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { downloadDailyWorksPDF } from '../lib/pdf';
 
@@ -89,6 +90,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
       setNewTaskTimesNeeded('');
       setNewTaskRemarks('');
       setIsAdding(false);
+      toast.success("Task added successfully");
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'daily_works');
     }
@@ -100,6 +102,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
         status: newStatus,
         updatedAt: new Date().toISOString(),
       });
+      toast.success(`Task moved to ${newStatus}`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `daily_works/${id}`);
     }
@@ -109,6 +112,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
     if (!window.confirm('Are you sure you want to delete this task?')) return;
     try {
       await deleteDoc(doc(db, 'daily_works', id));
+      toast.success("Task deleted successfully");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `daily_works/${id}`);
     }

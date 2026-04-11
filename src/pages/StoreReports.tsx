@@ -8,7 +8,7 @@ import { FileText, History, Package, Monitor } from 'lucide-react';
 import { downloadInventoryPDF, downloadInOutReportPDF } from '../lib/pdf';
 
 export default function StoreReports() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);

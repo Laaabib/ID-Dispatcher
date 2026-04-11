@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { toast } from 'sonner';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -36,8 +37,12 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const isPermissionDenied = errorMessage.toLowerCase().includes('permission-denied') || 
+                            errorMessage.toLowerCase().includes('insufficient permissions');
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMessage,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -54,6 +59,27 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
+
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // User-friendly messages
+  let friendlyMessage = "An unexpected database error occurred.";
+  
+  if (isPermissionDenied) {
+    friendlyMessage = `You don't have permission to ${operationType} data in ${path || 'this collection'}.`;
+  } else if (errorMessage.includes('quota-exceeded')) {
+    friendlyMessage = "Database quota exceeded. Please try again later.";
+  } else if (errorMessage.includes('offline')) {
+    friendlyMessage = "You appear to be offline. Please check your connection.";
+  } else {
+    friendlyMessage = `Failed to ${operationType} ${path || 'data'}. ${errorMessage}`;
+  }
+
+  toast.error(friendlyMessage);
+
+  if (isPermissionDenied) {
+    throw new Error(JSON.stringify(errInfo));
+  }
+  
+  return errInfo;
 }

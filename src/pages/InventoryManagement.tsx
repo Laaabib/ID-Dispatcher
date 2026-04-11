@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download, ArrowDownToLine, ArrowUpFromLine, History } from 'lucide-react';
+import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ItemInventory {
   id: string;
@@ -15,6 +18,7 @@ interface ItemInventory {
   quantity: number;
   unit: string;
   remarks: string;
+  userId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,8 +31,21 @@ interface AssetInventory {
   assignedTo: string;
   status: string;
   remarks: string;
+  userId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface ItemTransaction {
+  id: string;
+  itemId: string;
+  itemName: string;
+  type: 'in' | 'out';
+  quantity: number;
+  remarks: string;
+  user: string;
+  userId: string;
+  createdAt: string;
 }
 
 export default function InventoryManagement() {
@@ -39,7 +56,7 @@ export default function InventoryManagement() {
   // Data State
   const [items, setItems] = useState<ItemInventory[]>([]);
   const [assets, setAssets] = useState<AssetInventory[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<ItemTransaction[]>([]);
   
   // Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,6 +85,9 @@ export default function InventoryManagement() {
   const [transactionQuantity, setTransactionQuantity] = useState('');
   const [transactionRemarks, setTransactionRemarks] = useState('');
 
+  // Details Modal State
+  const [detailsModal, setDetailsModal] = useState<{isOpen: boolean, item: ItemInventory | null}>({isOpen: false, item: null});
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -88,7 +108,7 @@ export default function InventoryManagement() {
       
       setItems(itemsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }, (error) => {
-      console.error("Error fetching items:", error);
+      handleFirestoreError(error, OperationType.LIST, 'item_inventory');
     });
 
     const assetsQuery = query(collection(db, 'asset_inventory'));
@@ -104,7 +124,7 @@ export default function InventoryManagement() {
       
       setAssets(assetsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }, (error) => {
-      console.error("Error fetching assets:", error);
+      handleFirestoreError(error, OperationType.LIST, 'asset_inventory');
     });
 
     const transQuery = query(collection(db, 'item_transactions'));
@@ -112,15 +132,15 @@ export default function InventoryManagement() {
       let transData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as ItemTransaction[];
       
       if (!isSuperAdmin) {
         transData = transData.filter(trans => trans.userId === user.uid);
       }
       
-      setTransactions(transData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setTransactions(transData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }, (error) => {
-      console.error("Error fetching transactions:", error);
+      handleFirestoreError(error, OperationType.LIST, 'item_transactions');
     });
 
     return () => {
@@ -153,9 +173,9 @@ export default function InventoryManagement() {
       setItemUnit('');
       setItemRemarks('');
       setIsAdding(false);
+      toast.success("Item added successfully");
     } catch (error) {
-      console.error('Error adding item:', error);
-      alert('Failed to add item. Check permissions.');
+      handleFirestoreError(error, OperationType.CREATE, 'item_inventory');
     }
   };
 
@@ -184,9 +204,9 @@ export default function InventoryManagement() {
       setAssetStatus('');
       setAssetRemarks('');
       setIsAdding(false);
+      toast.success("Asset added successfully");
     } catch (error) {
-      console.error('Error adding asset:', error);
-      alert('Failed to add asset. Check permissions.');
+      handleFirestoreError(error, OperationType.CREATE, 'asset_inventory');
     }
   };
 
@@ -194,8 +214,9 @@ export default function InventoryManagement() {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
       await deleteDoc(doc(db, 'item_inventory', id));
+      toast.success("Item deleted successfully");
     } catch (error) {
-      console.error('Error deleting item:', error);
+      handleFirestoreError(error, OperationType.DELETE, 'item_inventory');
     }
   };
 
@@ -203,8 +224,9 @@ export default function InventoryManagement() {
     if (!window.confirm('Are you sure you want to delete this asset?')) return;
     try {
       await deleteDoc(doc(db, 'asset_inventory', id));
+      toast.success("Asset deleted successfully");
     } catch (error) {
-      console.error('Error deleting asset:', error);
+      handleFirestoreError(error, OperationType.DELETE, 'asset_inventory');
     }
   };
 
@@ -219,7 +241,7 @@ export default function InventoryManagement() {
       : transactionModal.item.quantity - qty;
       
     if (newQty < 0) {
-      alert('Not enough stock to perform this operation.');
+      toast.error('Not enough stock to perform this operation.');
       return;
     }
     
@@ -244,9 +266,9 @@ export default function InventoryManagement() {
       setTransactionModal({isOpen: false, type: 'in', item: null});
       setTransactionQuantity('');
       setTransactionRemarks('');
+      toast.success(`Stock ${transactionModal.type === 'in' ? 'added' : 'removed'} successfully`);
     } catch (error) {
-      console.error('Error processing transaction:', error);
-      alert('Failed to process transaction.');
+      handleFirestoreError(error, OperationType.WRITE, 'item_transactions');
     }
   };
 
@@ -342,6 +364,42 @@ export default function InventoryManagement() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
     XLSX.writeFile(wb, fileName);
+  };
+
+  const exportItemHistory = (item: ItemInventory) => {
+    const itemTrans = transactions.filter(t => t.itemId === item.id);
+    const doc = new jsPDF();
+    
+    // Add Header
+    doc.setFontSize(18);
+    doc.text('Item Transaction History', 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    
+    doc.text(`Item Name: ${item.name}`, 14, 32);
+    doc.text(`Category: ${item.category}`, 14, 38);
+    doc.text(`Current Stock: ${item.quantity} ${item.unit}`, 14, 44);
+    doc.text(`Report Generated: ${new Date().toLocaleString()}`, 14, 50);
+
+    const tableData = itemTrans.map(t => [
+      new Date(t.createdAt).toLocaleDateString(),
+      new Date(t.createdAt).toLocaleTimeString(),
+      t.type === 'in' ? 'Stock In' : 'Stock Out',
+      t.quantity,
+      t.user || 'Unknown',
+      t.remarks || '-'
+    ]);
+
+    autoTable(doc, {
+      startY: 60,
+      head: [['Date', 'Time', 'Type', 'Quantity', 'User', 'Remarks']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229] },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`${item.name}_history.pdf`);
   };
 
   // Get unique categories for the active tab
@@ -608,14 +666,16 @@ export default function InventoryManagement() {
                       acc[cat].push(item);
                       return acc;
                     }, {} as Record<string, ItemInventory[]>)
-                  ).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryItems]) => (
+                  ).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryItems]) => {
+                    const items = categoryItems as ItemInventory[];
+                    return (
                     <React.Fragment key={category}>
                       <tr className="bg-slate-100 dark:bg-slate-800/80">
                         <td colSpan={6} className="px-6 py-2 font-semibold text-slate-700 dark:text-slate-300 text-sm">
                           {category}
                         </td>
                       </tr>
-                      {categoryItems.map(item => (
+                      {items.map((item: ItemInventory) => (
                         <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="px-6 py-4 font-medium text-slate-900 dark:text-white pl-10">{item.name}</td>
                           <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
@@ -634,6 +694,9 @@ export default function InventoryManagement() {
                               <Button variant="ghost" size="icon" title="Goods Out" onClick={() => setTransactionModal({isOpen: true, type: 'out', item})} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
                                 <ArrowUpFromLine className="w-4 h-4" />
                               </Button>
+                              <Button variant="ghost" size="icon" title="View Details" onClick={() => setDetailsModal({isOpen: true, item})} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                <FileText className="w-4 h-4" />
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -642,7 +705,8 @@ export default function InventoryManagement() {
                         </tr>
                       ))}
                     </React.Fragment>
-                  ))
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
@@ -659,14 +723,16 @@ export default function InventoryManagement() {
                       acc[cat].push(asset);
                       return acc;
                     }, {} as Record<string, AssetInventory[]>)
-                  ).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryAssets]) => (
+                  ).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryAssets]) => {
+                    const assets = categoryAssets as AssetInventory[];
+                    return (
                     <React.Fragment key={category}>
                       <tr className="bg-slate-100 dark:bg-slate-800/80">
                         <td colSpan={6} className="px-6 py-2 font-semibold text-slate-700 dark:text-slate-300 text-sm">
                           {category}
                         </td>
                       </tr>
-                      {categoryAssets.map(asset => (
+                      {assets.map((asset: AssetInventory) => (
                         <tr key={asset.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="px-6 py-4 font-medium text-slate-900 dark:text-white pl-10">{asset.name}</td>
                           <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
@@ -685,7 +751,8 @@ export default function InventoryManagement() {
                         </tr>
                       ))}
                     </React.Fragment>
-                  ))
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
@@ -745,6 +812,125 @@ export default function InventoryManagement() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailsModal.isOpen && detailsModal.item && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-4xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  Item Details: {detailsModal.item.name}
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Transaction history and stock details
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => exportItemHistory(detailsModal.item!)}
+                >
+                  <Download className="w-4 h-4" />
+                  Export PDF
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setDetailsModal({isOpen: false, item: null})}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Current Stock</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {detailsModal.item.quantity} <span className="text-sm font-normal text-slate-500">{detailsModal.item.unit}</span>
+                  </p>
+                </div>
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800/30">
+                  <p className="text-xs text-emerald-600 uppercase font-semibold mb-1">Total Stock In</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                    {transactions
+                      .filter(t => t.itemId === detailsModal.item?.id && t.type === 'in')
+                      .reduce((sum, t) => sum + t.quantity, 0)}
+                  </p>
+                </div>
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/30">
+                  <p className="text-xs text-amber-600 uppercase font-semibold mb-1">Total Stock Out</p>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                    {transactions
+                      .filter(t => t.itemId === detailsModal.item?.id && t.type === 'out')
+                      .reduce((sum, t) => sum + t.quantity, 0)}
+                  </p>
+                </div>
+              </div>
+
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <History className="w-4 h-4" />
+                Transaction History
+              </h3>
+              
+              <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase text-xs">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Date & Time</th>
+                      <th className="px-4 py-3 font-medium">Type</th>
+                      <th className="px-4 py-3 font-medium text-right">Qty</th>
+                      <th className="px-4 py-3 font-medium">User</th>
+                      <th className="px-4 py-3 font-medium">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {transactions
+                      .filter(t => t.itemId === detailsModal.item?.id)
+                      .map((t, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                          <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                            {new Date(t.createdAt).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              t.type === 'in' 
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
+                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                            }`}>
+                              {t.type === 'in' ? 'In' : 'Out'}
+                            </span>
+                          </td>
+                          <td className={`px-4 py-3 text-right font-medium ${
+                            t.type === 'in' ? 'text-emerald-600' : 'text-amber-600'
+                          }`}>
+                            {t.type === 'in' ? '+' : '-'}{t.quantity}
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-xs">
+                            {t.user}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs italic">
+                            {t.remarks || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    {transactions.filter(t => t.itemId === detailsModal.item?.id).length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-slate-500 italic">
+                          No transaction history found for this item.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
