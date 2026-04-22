@@ -224,6 +224,21 @@
       },
       "required": ["name", "category", "createdAt", "updatedAt"]
     },
+    "ToolInventory": {
+      "title": "ToolInventory",
+      "description": "Tool inventory records.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "quantity": { "type": "number" },
+        "assignedTo": { "type": "string" },
+        "remarks": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "quantity", "createdAt", "updatedAt"]
+    },
     "Employee": {
       "title": "Employee",
       "description": "An employee record.",
@@ -293,6 +308,12 @@
         "$ref": "#/entities/AssetInventory"
       },
       "description": "Stores asset inventory."
+    },
+    "tool_inventory/{toolId}": {
+      "schema": {
+        "$ref": "#/entities/ToolInventory"
+      },
+      "description": "Stores tool inventory."
     },
     "employees/{employeeId}": {
       "schema": {

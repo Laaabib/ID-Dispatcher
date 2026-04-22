@@ -197,6 +197,18 @@ service cloud.firestore {
              isValidDateString(data.updatedAt);
     }
 
+    function isValidToolInventory(data) {
+      return hasOnlyAllowedFields(['name', 'category', 'quantity', 'assignedTo', 'remarks', 'userId', 'createdAt', 'updatedAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.quantity is number &&
+             (!('assignedTo' in data) || (data.assignedTo is string && data.assignedTo.size() <= 100)) &&
+             (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt);
+    }
+
     function isValidItemTransaction(data) {
       return hasOnlyAllowedFields(['itemId', 'itemName', 'type', 'quantity', 'remarks', 'user', 'userId', 'createdAt']) &&
              data.itemId is string && data.itemId.size() > 0 && data.itemId.size() <= 100 &&
@@ -347,6 +359,13 @@ service cloud.firestore {
       allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow create: if isValidAssetInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && request.resource.data.userId == request.auth.uid));
       allow update: if isValidAssetInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid));
+      allow delete: if isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid);
+    }
+
+    match /tool_inventory/{toolId} {
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isValidToolInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && request.resource.data.userId == request.auth.uid));
+      allow update: if isValidToolInventory(request.resource.data) && (isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid));
       allow delete: if isSuperAdmin() || (isInventoryManager() && resource.data.userId == request.auth.uid);
     }
 

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download, ArrowDownToLine, ArrowUpFromLine, History } from 'lucide-react';
+import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download, ArrowDownToLine, ArrowUpFromLine, History, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -36,6 +36,18 @@ interface AssetInventory {
   updatedAt: string;
 }
 
+interface ToolInventory {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  assignedTo: string;
+  remarks: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ItemTransaction {
   id: string;
   itemId: string;
@@ -50,12 +62,13 @@ interface ItemTransaction {
 
 export default function InventoryManagement() {
   const { user, role } = useAuth();
-  const [activeTab, setActiveTab] = useState<'items' | 'assets'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'assets' | 'tools'>('items');
   const [assetFilter, setAssetFilter] = useState<'all' | 'in_store' | 'used'>('all');
   
   // Data State
   const [items, setItems] = useState<ItemInventory[]>([]);
   const [assets, setAssets] = useState<AssetInventory[]>([]);
+  const [tools, setTools] = useState<ToolInventory[]>([]);
   const [transactions, setTransactions] = useState<ItemTransaction[]>([]);
   
   // Filter State
@@ -80,13 +93,20 @@ export default function InventoryManagement() {
   const [assetStatus, setAssetStatus] = useState('');
   const [assetRemarks, setAssetRemarks] = useState('');
 
+  // Tool Form
+  const [toolName, setToolName] = useState('');
+  const [toolCategory, setToolCategory] = useState('');
+  const [toolQuantity, setToolQuantity] = useState('');
+  const [toolAssignedTo, setToolAssignedTo] = useState('');
+  const [toolRemarks, setToolRemarks] = useState('');
+
   // Transaction Modal State
-  const [transactionModal, setTransactionModal] = useState<{isOpen: boolean, type: 'in' | 'out', item: ItemInventory | null}>({isOpen: false, type: 'in', item: null});
+  const [transactionModal, setTransactionModal] = useState<{isOpen: boolean, type: 'in' | 'out', item: ItemInventory | ToolInventory | null, collectionType?: 'item_inventory' | 'tool_inventory'}>({isOpen: false, type: 'in', item: null});
   const [transactionQuantity, setTransactionQuantity] = useState('');
   const [transactionRemarks, setTransactionRemarks] = useState('');
 
   // Details Modal State
-  const [detailsModal, setDetailsModal] = useState<{isOpen: boolean, item: ItemInventory | null}>({isOpen: false, item: null});
+  const [detailsModal, setDetailsModal] = useState<{isOpen: boolean, item: ItemInventory | ToolInventory | null}>({isOpen: false, item: null});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -127,6 +147,22 @@ export default function InventoryManagement() {
       handleFirestoreError(error, OperationType.LIST, 'asset_inventory');
     });
 
+    const toolsQuery = query(collection(db, 'tool_inventory'));
+    const unsubscribeTools = onSnapshot(toolsQuery, (snapshot) => {
+      let toolsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ToolInventory[];
+      
+      if (!isSuperAdmin) {
+        toolsData = toolsData.filter(tool => tool.userId === user.uid);
+      }
+      
+      setTools(toolsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'tool_inventory');
+    });
+
     const transQuery = query(collection(db, 'item_transactions'));
     const unsubscribeTrans = onSnapshot(transQuery, (snapshot) => {
       let transData = snapshot.docs.map(doc => ({
@@ -146,6 +182,7 @@ export default function InventoryManagement() {
     return () => {
       unsubscribeItems();
       unsubscribeAssets();
+      unsubscribeTools();
       unsubscribeTrans();
     };
   }, [user]);
@@ -210,6 +247,35 @@ export default function InventoryManagement() {
     }
   };
 
+  const handleAddTool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!toolName || !toolCategory || !toolQuantity) return;
+
+    try {
+      const newToolRef = doc(collection(db, 'tool_inventory'));
+      await setDoc(newToolRef, {
+        name: toolName,
+        category: toolCategory,
+        quantity: Number(toolQuantity),
+        assignedTo: toolAssignedTo,
+        remarks: toolRemarks,
+        userId: user?.uid,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      setToolName('');
+      setToolCategory('');
+      setToolQuantity('');
+      setToolAssignedTo('');
+      setToolRemarks('');
+      setIsAdding(false);
+      toast.success("Tool added successfully");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'tool_inventory');
+    }
+  };
+
   const handleDeleteItem = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
@@ -230,6 +296,16 @@ export default function InventoryManagement() {
     }
   };
 
+  const handleDeleteTool = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this tool?')) return;
+    try {
+      await deleteDoc(doc(db, 'tool_inventory', id));
+      toast.success("Tool deleted successfully");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'tool_inventory');
+    }
+  };
+
   const handleTransactionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transactionModal.item || !transactionQuantity) return;
@@ -247,7 +323,8 @@ export default function InventoryManagement() {
     
     try {
       const batch = writeBatch(db);
-      const itemRef = doc(db, 'item_inventory', transactionModal.item.id);
+      const collectionName = transactionModal.collectionType || 'item_inventory';
+      const itemRef = doc(db, collectionName, transactionModal.item.id);
       batch.update(itemRef, { quantity: newQty, updatedAt: new Date().toISOString() });
       
       const transRef = doc(collection(db, 'item_transactions'));
@@ -310,7 +387,7 @@ export default function InventoryManagement() {
               count++;
             }
           });
-        } else {
+        } else if (activeTab === 'assets') {
           data.forEach((row: any) => {
             if (row.Name && row.Category) {
               const newRef = doc(collection(db, 'asset_inventory'));
@@ -320,6 +397,23 @@ export default function InventoryManagement() {
                 serialNumber: String(row['Serial Number'] || row.SerialNumber || ''),
                 assignedTo: String(row['Assigned To'] || row.AssignedTo || ''),
                 status: String(row.Status || ''),
+                remarks: String(row.Remarks || ''),
+                userId: user?.uid,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              });
+              count++;
+            }
+          });
+        } else {
+          data.forEach((row: any) => {
+            if (row.Name && row.Category) {
+              const newRef = doc(collection(db, 'tool_inventory'));
+              batch.set(newRef, {
+                name: String(row.Name || ''),
+                category: String(row.Category || ''),
+                quantity: Number(row.Quantity || 0),
+                assignedTo: String(row['Assigned To'] || row.AssignedTo || ''),
                 remarks: String(row.Remarks || ''),
                 userId: user?.uid,
                 createdAt: new Date().toISOString(),
@@ -355,9 +449,12 @@ export default function InventoryManagement() {
     if (activeTab === 'items') {
       headers = [['Name', 'Category', 'Quantity', 'Unit', 'Remarks']];
       fileName = 'Item_Inventory_Template.xlsx';
-    } else {
+    } else if (activeTab === 'assets') {
       headers = [['Name', 'Category', 'Serial Number', 'Assigned To', 'Status', 'Remarks']];
       fileName = 'Asset_Inventory_Template.xlsx';
+    } else {
+      headers = [['Name', 'Category', 'Quantity', 'Assigned To', 'Remarks']];
+      fileName = 'Tool_Inventory_Template.xlsx';
     }
     
     const ws = XLSX.utils.aoa_to_sheet(headers);
@@ -366,7 +463,7 @@ export default function InventoryManagement() {
     XLSX.writeFile(wb, fileName);
   };
 
-  const exportItemHistory = (item: ItemInventory) => {
+  const exportItemHistory = (item: ItemInventory | ToolInventory) => {
     const itemTrans = transactions.filter(t => t.itemId === item.id);
     const doc = new jsPDF();
     
@@ -378,7 +475,8 @@ export default function InventoryManagement() {
     
     doc.text(`Item Name: ${item.name}`, 14, 32);
     doc.text(`Category: ${item.category}`, 14, 38);
-    doc.text(`Current Stock: ${item.quantity} ${item.unit}`, 14, 44);
+    const itemUnit = 'unit' in item ? item.unit : '';
+    doc.text(`Current Stock: ${item.quantity} ${itemUnit}`, 14, 44);
     doc.text(`Report Generated: ${new Date().toLocaleString()}`, 14, 50);
 
     const tableData = itemTrans.map(t => [
@@ -406,7 +504,9 @@ export default function InventoryManagement() {
   const categories = Array.from(new Set(
     activeTab === 'items' 
       ? items.map(i => i.category).filter(Boolean)
-      : assets.map(a => a.category).filter(Boolean)
+      : activeTab === 'assets'
+        ? assets.map(a => a.category).filter(Boolean)
+        : tools.map(t => t.category).filter(Boolean)
   )).sort();
 
   // Filter data
@@ -437,6 +537,14 @@ export default function InventoryManagement() {
     return matchesSearch && matchesCategory && matchesFilter;
   });
 
+  const filteredTools = tools.filter(tool => {
+    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          tool.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          tool.assignedTo.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory ? tool.category === selectedCategory : true;
+    return matchesSearch && matchesCategory;
+  });
+
   const isSuperAdmin = role === 'admin' || user?.email === '140001@padmaawt.internal' || user?.email === 'padmaawtit@gmail.com';
   if (!isSuperAdmin && role !== 'inventory_manager') {
     return (
@@ -455,7 +563,7 @@ export default function InventoryManagement() {
           <p className="text-slate-500 dark:text-slate-400">Manage items and IT assets</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input 
             type="file" 
             accept=".xlsx, .xls" 
@@ -475,6 +583,32 @@ export default function InventoryManagement() {
           <Button 
             variant="outline" 
             className="gap-2"
+            onClick={() => {
+              let exportData: any[] = [];
+              let fileName = '';
+              if (activeTab === 'items') {
+                exportData = filteredItems.map(({ name, category, quantity, unit, remarks }) => ({ Name: name, Category: category, Quantity: quantity, Unit: unit || '', Remarks: remarks || '' }));
+                fileName = 'Item_Inventory_Export.xlsx';
+              } else if (activeTab === 'assets') {
+                exportData = filteredAssets.map(({ name, category, serialNumber, assignedTo, status, remarks }) => ({ Name: name, Category: category, 'Serial Number': serialNumber || '', 'Assigned To': assignedTo || '', Status: status || '', Remarks: remarks || '' }));
+                fileName = 'Asset_Inventory_Export.xlsx';
+              } else {
+                exportData = filteredTools.map(({ name, category, quantity, assignedTo, remarks }) => ({ Name: name, Category: category, Quantity: quantity, 'Assigned To': assignedTo || '', Remarks: remarks || '' }));
+                fileName = 'Tool_Inventory_Export.xlsx';
+              }
+              const ws = XLSX.utils.json_to_sheet(exportData);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+              XLSX.writeFile(wb, fileName);
+            }}
+            title="Export Current Inventory to Excel"
+          >
+            <FileText className="w-4 h-4" />
+            Export
+          </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2"
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="w-4 h-4" />
@@ -482,7 +616,7 @@ export default function InventoryManagement() {
           </Button>
           <Button onClick={() => setIsAdding(!isAdding)} className="gap-2">
             <Plus className="w-4 h-4" />
-            {isAdding ? 'Cancel' : `Add ${activeTab === 'items' ? 'Item' : 'Asset'}`}
+            {isAdding ? 'Cancel' : `Add ${activeTab === 'items' ? 'Item' : activeTab === 'assets' ? 'Asset' : 'Tool'}`}
           </Button>
         </div>
       </div>
@@ -509,6 +643,17 @@ export default function InventoryManagement() {
         >
           <Monitor className="w-4 h-4" />
           Asset Inventory
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm flex items-center gap-2 transition-all duration-300 ease-out relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:transition-all after:duration-300 hover:-translate-y-0.5 ${
+            activeTab === 'tools'
+              ? 'text-primary-600 dark:text-primary-400 after:w-full'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 after:w-0 hover:after:w-full'
+          }`}
+          onClick={() => { setActiveTab('tools'); setSelectedCategory(''); setSearchQuery(''); setIsAdding(false); }}
+        >
+          <Wrench className="w-4 h-4" />
+          Tools Inventory
         </button>
       </div>
 
@@ -559,7 +704,7 @@ export default function InventoryManagement() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="itemQuantity">Quantity *</Label>
-                <Input id="itemQuantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(e.target.value)} required />
+                <Input id="itemQuantity" type="number" min="0" value={itemQuantity} onChange={e => setItemQuantity(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="itemUnit">Unit (e.g., pcs, boxes)</Label>
@@ -573,7 +718,7 @@ export default function InventoryManagement() {
                 <Button type="submit">Save Item</Button>
               </div>
             </form>
-          ) : (
+          ) : activeTab === 'assets' ? (
             <form onSubmit={handleAddAsset} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="assetName">Asset Name *</Label>
@@ -601,6 +746,32 @@ export default function InventoryManagement() {
               </div>
               <div className="md:col-span-2 lg:col-span-3 flex justify-end mt-2">
                 <Button type="submit">Save Asset</Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleAddTool} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="toolName">Tool Name *</Label>
+                <Input id="toolName" value={toolName} onChange={e => setToolName(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="toolCategory">Category *</Label>
+                <Input id="toolCategory" value={toolCategory} onChange={e => setToolCategory(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="toolQuantity">Quantity *</Label>
+                <Input id="toolQuantity" type="number" min="0" value={toolQuantity} onChange={e => setToolQuantity(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="toolAssignedTo">Assigned To</Label>
+                <Input id="toolAssignedTo" value={toolAssignedTo} onChange={e => setToolAssignedTo(e.target.value)} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="toolRemarks">Remarks</Label>
+                <Input id="toolRemarks" value={toolRemarks} onChange={e => setToolRemarks(e.target.value)} />
+              </div>
+              <div className="md:col-span-2 lg:col-span-3 flex justify-end mt-2">
+                <Button type="submit">Save Tool</Button>
               </div>
             </form>
           )}
@@ -645,13 +816,22 @@ export default function InventoryManagement() {
                   <th className="px-6 py-3 font-medium">Remarks</th>
                   <th className="px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
-              ) : (
+              ) : activeTab === 'assets' ? (
                 <tr>
                   <th className="px-6 py-3 font-medium">Name</th>
                   <th className="px-6 py-3 font-medium">Category</th>
                   <th className="px-6 py-3 font-medium">Serial Number</th>
                   <th className="px-6 py-3 font-medium">Assigned To</th>
                   <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 font-medium text-right">Actions</th>
+                </tr>
+              ) : (
+                <tr>
+                  <th className="px-6 py-3 font-medium">Name</th>
+                  <th className="px-6 py-3 font-medium">Category</th>
+                  <th className="px-6 py-3 font-medium">Quantity</th>
+                  <th className="px-6 py-3 font-medium">Assigned To</th>
+                  <th className="px-6 py-3 font-medium">Remarks</th>
                   <th className="px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
               )}
@@ -714,7 +894,7 @@ export default function InventoryManagement() {
                     </td>
                   </tr>
                 )
-              ) : (
+               ) : activeTab === 'assets' ? (
                 filteredAssets.length > 0 ? (
                   Object.entries(
                     filteredAssets.reduce((acc, asset) => {
@@ -760,6 +940,63 @@ export default function InventoryManagement() {
                     </td>
                   </tr>
                 )
+              ) : (
+                filteredTools.length > 0 ? (
+                  Object.entries(
+                    filteredTools.reduce((acc, tool) => {
+                      const cat = tool.category || 'Uncategorized';
+                      if (!acc[cat]) acc[cat] = [];
+                      acc[cat].push(tool);
+                      return acc;
+                    }, {} as Record<string, ToolInventory[]>)
+                  ).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryTools]) => {
+                    const toolsGroup = categoryTools as ToolInventory[];
+                    return (
+                    <React.Fragment key={category}>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80">
+                        <td colSpan={6} className="px-6 py-2 font-semibold text-slate-700 dark:text-slate-300 text-sm">
+                          {category}
+                        </td>
+                      </tr>
+                      {toolsGroup.map((tool: ToolInventory) => (
+                        <tr key={tool.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white pl-10">{tool.name}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {tool.category}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{tool.quantity}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{tool.assignedTo || '-'}</td>
+                          <td className="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={tool.remarks}>{tool.remarks || '-'}</td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" title="Goods In" onClick={() => setTransactionModal({isOpen: true, type: 'in', item: tool, collectionType: 'tool_inventory'})} className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                <ArrowDownToLine className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" title="Goods Out" onClick={() => setTransactionModal({isOpen: true, type: 'out', item: tool, collectionType: 'tool_inventory'})} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+                                <ArrowUpFromLine className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" title="View Details" onClick={() => setDetailsModal({isOpen: true, item: tool})} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                <FileText className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteTool(tool.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                      No tools found.
+                    </td>
+                  </tr>
+                )
               )}
             </tbody>
           </table>
@@ -773,7 +1010,7 @@ export default function InventoryManagement() {
                 {transactionModal.type === 'in' ? 'Goods In' : 'Goods Out'} - {transactionModal.item.name}
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                Current Quantity: <span className="font-bold text-slate-900 dark:text-white">{transactionModal.item.quantity} {transactionModal.item.unit}</span>
+                Current Quantity: <span className="font-bold text-slate-900 dark:text-white">{transactionModal.item.quantity} {'unit' in transactionModal.item ? transactionModal.item.unit : ''}</span>
               </p>
               
               <form onSubmit={handleTransactionSubmit} className="space-y-4">
@@ -854,7 +1091,7 @@ export default function InventoryManagement() {
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
                   <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Current Stock</p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {detailsModal.item.quantity} <span className="text-sm font-normal text-slate-500">{detailsModal.item.unit}</span>
+                    {detailsModal.item.quantity} <span className="text-sm font-normal text-slate-500">{'unit' in detailsModal.item ? detailsModal.item.unit : ''}</span>
                   </p>
                 </div>
                 <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800/30">
