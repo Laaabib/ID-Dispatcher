@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { collection, addDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -21,16 +21,30 @@ export default function ApplicationForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    name: '',
-    designation: '',
-    department: '',
-    applicationDate: format(new Date(), 'yyyy-MM-dd'),
-    joiningDate: '',
-    nidNumber: '',
-    employeeId: '',
-    bloodGroup: '',
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('applicationFormData');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved form data', e);
+      }
+    }
+    return {
+      name: '',
+      designation: '',
+      department: '',
+      applicationDate: format(new Date(), 'yyyy-MM-dd'),
+      joiningDate: '',
+      nidNumber: '',
+      employeeId: '',
+      bloodGroup: '',
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem('applicationFormData', JSON.stringify(formData));
+  }, [formData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -73,6 +87,7 @@ export default function ApplicationForm() {
       };
 
       await addDoc(collection(db, 'applications'), applicationData);
+      localStorage.removeItem('applicationFormData');
       toast.success("Application submitted successfully");
       navigate('/');
     } catch (err) {

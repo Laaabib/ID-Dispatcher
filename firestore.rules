@@ -222,16 +222,18 @@ service cloud.firestore {
     }
 
     function isValidEmployee(data) {
-      return hasOnlyAllowedFields(['name', 'employeeId', 'department', 'designation', 'joiningDate', 'status', 'userId', 'createdAt', 'updatedAt']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.employeeId is string && data.employeeId.size() > 0 && data.employeeId.size() <= 50 &&
-             data.department is string && data.department.size() <= 100 &&
-             data.designation is string && data.designation.size() <= 100 &&
-             (!('joiningDate' in data) || (data.joiningDate is string && data.joiningDate.size() <= 50)) &&
-             data.status in ['active', 'inactive'] &&
-             (!('userId' in data) || (data.userId is string && data.userId.size() <= 50)) &&
-             isValidDateString(data.createdAt) &&
-             isValidDateString(data.updatedAt);
+      return (!('name' in data) || data.name is string) &&
+             (!('employeeId' in data) || data.employeeId is string) &&
+             (!('department' in data) || data.department is string) &&
+             (!('designation' in data) || data.designation is string) &&
+             (!('joiningDate' in data) || data.joiningDate is string) &&
+             (!('basicSalary' in data) || data.basicSalary is string || data.basicSalary is number) &&
+             (!('houseAllowance' in data) || data.houseAllowance is string || data.houseAllowance is number) &&
+             (!('serviceCharge' in data) || data.serviceCharge is string || data.serviceCharge is number) &&
+             (!('status' in data) || data.status in ['active', 'inactive', 'Active', 'Inactive']) &&
+             (!('userId' in data) || data.userId == null || data.userId is string) &&
+             (!('createdAt' in data) || data.createdAt is string) &&
+             (!('updatedAt' in data) || data.updatedAt is string);
     }
 
     function isValidAttendance(data) {
@@ -244,6 +246,29 @@ service cloud.firestore {
              data.status in ['Present', 'Absent', 'Leave', 'Half Day'] &&
              (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 2000)) &&
              (!('source' in data) || (data.source is string && data.source.size() <= 100)) &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt);
+    }
+
+    function isValidLeaveApplication(data) {
+      return hasOnlyAllowedFields(['userId', 'employeeName', 'employeeId', 'department', 'leaveType', 'startDate', 'endDate', 'reason', 'contactNo', 'emergencyContactNo', 'addressOnLeave', 'leavingTime', 'reportingTime', 'employeeSignature', 'hodSignature', 'adminSignature', 'status', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.employeeName is string && data.employeeName.size() > 0 &&
+             data.employeeId is string && data.employeeId.size() > 0 &&
+             data.department is string && data.department.size() > 0 &&
+             data.leaveType in ["Annual", "Sick", "Casual", "Maternity", "Paternity", "Day Off", "Other"] &&
+             data.startDate is string && data.startDate.size() > 0 &&
+             data.endDate is string && data.endDate.size() > 0 &&
+             data.reason is string &&
+             data.contactNo is string &&
+             data.emergencyContactNo is string &&
+             data.addressOnLeave is string &&
+             data.leavingTime is string &&
+             data.reportingTime is string &&
+             data.employeeSignature is string && data.employeeSignature.size() > 0 &&
+             (!('hodSignature' in data) || data.hodSignature is string) &&
+             (!('adminSignature' in data) || data.adminSignature is string) &&
+             data.status in ["Pending", "Approved by HOD", "Approved by Admin", "Rejected"] &&
              isValidDateString(data.createdAt) &&
              isValidDateString(data.updatedAt);
     }
@@ -394,6 +419,23 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAdmin() && isValidAttendanceDevice(request.resource.data);
       allow update: if (isAdmin() || true) && isValidAttendanceDevice(request.resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /leave_applications/{leaveId} {
+      // Users can read their own leave apps, admins can read all
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Users can create their own leave apps
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidLeaveApplication(request.resource.data);
+      // Users can edit if pending, admins can edit regardless
+      allow update: if isAuthenticated() && isValidLeaveApplication(request.resource.data) && (
+                         isAdmin() ||
+                         (
+                           resource.data.userId == request.auth.uid &&
+                           request.resource.data.userId == request.auth.uid &&
+                           resource.data.status == 'Pending'
+                         )
+                       );
       allow delete: if isSuperAdmin();
     }
   }

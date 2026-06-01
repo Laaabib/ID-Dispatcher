@@ -18,6 +18,10 @@ import InventoryManagement from './pages/InventoryManagement';
 import Employees from './pages/Employees';
 import Attendance from './pages/Attendance';
 import UserManagement from './pages/UserManagement';
+import LeaveApplication from './pages/LeaveApplication';
+import LeaveAdmin from './pages/LeaveAdmin';
+
+import HRManagement from './pages/HRManagement';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -60,6 +64,9 @@ export default function App() {
                 <Route path="employees" element={<Employees />} />
                 <Route path="attendance" element={<Attendance />} />
                 <Route path="users" element={<UserManagement />} />
+                <Route path="hr" element={<HRManagement />} />
+                <Route path="leave" element={<LeaveApplication />} />
+                <Route path="leave-admin" element={<LeaveAdmin />} />
               </Route>
             </Routes>
           </BrowserRouter>

@@ -4,11 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAdminNotifications } from '../hooks/useAdminNotifications';
 import { Button } from '../components/ui/button';
-import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2, CheckCircle2, Package, Users, Calendar, FileText, X, ChevronLeft, ChevronRight, Bell, Eye } from 'lucide-react';
+import { LogOut, Shield, User as UserIcon, Badge as BadgeIcon, LayoutDashboard, Sun, Moon, Menu, BarChart2, CheckCircle2, Package, Users, Calendar, FileText, X, ChevronLeft, ChevronRight, Bell, Eye, Briefcase } from 'lucide-react';
 import AIAssistant from './AIAssistant';
 import logoImg from '../assets/Logo.svg';
 
-const NavItem = ({ to, icon: Icon, children, onClick, isCollapsed }: { to: string, icon: any, children: React.ReactNode, onClick?: () => void, isCollapsed?: boolean }) => (
+const NavItem = ({ to, icon: Icon, children, onClick, isCollapsed, className = '' }: { to: string, icon: any, children: React.ReactNode, onClick?: () => void, isCollapsed?: boolean, className?: string }) => (
   <NavLink
     to={to}
     onClick={onClick}
@@ -18,7 +18,7 @@ const NavItem = ({ to, icon: Icon, children, onClick, isCollapsed }: { to: strin
         isActive
           ? 'bg-primary-50/80 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 shadow-sm border border-primary-100 dark:border-primary-800/50 backdrop-blur-md'
           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 hover:shadow-sm border border-transparent backdrop-blur-sm'
-      } ${isCollapsed ? 'justify-center' : ''}`
+      } ${isCollapsed ? 'justify-center' : ''} ${className}`
     }
   >
     <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 ${isCollapsed ? 'mx-auto' : ''}`} />
@@ -55,28 +55,35 @@ export default function Layout() {
 
   const NavLinks = ({ onClick, isCollapsed }: { onClick?: () => void, isCollapsed?: boolean }) => (
     <>
-      {isAdmin && (
-        <>
-          <NavItem to="/admin-dashboard" icon={LayoutDashboard} onClick={onClick} isCollapsed={isCollapsed}>Dashboard</NavItem>
-          <NavItem to="/admin" icon={Shield} onClick={onClick} isCollapsed={isCollapsed}>ID Cards</NavItem>
-          <NavItem to="/nametag-admin" icon={BadgeIcon} onClick={onClick} isCollapsed={isCollapsed}>Nametags</NavItem>
-          <NavItem to="/employees" icon={Users} onClick={onClick} isCollapsed={isCollapsed}>Employees</NavItem>
-          {role === 'admin' && (
-            <NavItem to="/users" icon={Shield} onClick={onClick} isCollapsed={isCollapsed}>User Roles</NavItem>
-          )}
-        </>
-      )}
-      <NavItem to="/attendance" icon={Calendar} onClick={onClick} isCollapsed={isCollapsed}>Attendance</NavItem>
-      <NavItem to="/reports" icon={BarChart2} onClick={onClick} isCollapsed={isCollapsed}>Reports</NavItem>
-      
-      {isSpecialUser && (
-        <>
-          <NavItem to="/daily-works" icon={CheckCircle2} onClick={onClick} isCollapsed={isCollapsed}>Daily Works</NavItem>
-        </>
-      )}
-      {(isSpecialUser || role === 'admin' || role === 'inventory_manager') && (
-        <NavItem to="/inventory" icon={Package} onClick={onClick} isCollapsed={isCollapsed}>Inventory</NavItem>
-      )}
+      <div className="space-y-1">
+        {isAdmin && (
+          <>
+            <NavItem to="/admin-dashboard" icon={LayoutDashboard} onClick={onClick} isCollapsed={isCollapsed}>Dashboard</NavItem>
+            <NavItem to="/admin" icon={Shield} onClick={onClick} isCollapsed={isCollapsed}>ID Cards</NavItem>
+            <NavItem to="/nametag-admin" icon={BadgeIcon} onClick={onClick} isCollapsed={isCollapsed}>Nametags</NavItem>
+            {role === 'admin' && (
+              <NavItem to="/users" icon={Shield} onClick={onClick} isCollapsed={isCollapsed}>User Roles</NavItem>
+            )}
+          </>
+        )}
+        
+        {/* HR Section */}
+        <div className="pt-2 pb-1">
+          {!isCollapsed && <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">HR Management</p>}
+          <NavItem to="/hr" icon={Briefcase} onClick={onClick} isCollapsed={isCollapsed}>HR Dashboard</NavItem>
+        </div>
+
+        <NavItem to="/reports" icon={BarChart2} onClick={onClick} isCollapsed={isCollapsed}>Reports</NavItem>
+        
+        {isSpecialUser && (
+          <>
+            <NavItem to="/daily-works" icon={CheckCircle2} onClick={onClick} isCollapsed={isCollapsed}>Daily Works</NavItem>
+          </>
+        )}
+        {(isSpecialUser || role === 'admin' || role === 'inventory_manager') && (
+          <NavItem to="/inventory" icon={Package} onClick={onClick} isCollapsed={isCollapsed}>Inventory</NavItem>
+        )}
+      </div>
     </>
   );
 
@@ -115,7 +122,7 @@ export default function Layout() {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className={`hidden lg:flex flex-col fixed inset-y-0 left-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-30 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <aside className={`hidden lg:flex flex-col fixed inset-y-0 left-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-30 transition-all duration-300 ease-in-out print:hidden ${isCollapsed ? 'w-20' : 'w-64'}`}>
         <Button
           variant="outline"
           size="icon"
@@ -153,9 +160,9 @@ export default function Layout() {
       </aside>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${isCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${isCollapsed ? 'lg:pl-20' : 'lg:pl-64'} print:!pl-0`}>
         {/* Topbar */}
-        <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300">
+        <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300 print:hidden">
           <div className="flex items-center lg:hidden">
             <Link to="/" className="flex items-center gap-3 transition-all duration-200 hover:opacity-80">
               <img src={logoImg} alt="Padma id Manager" className="h-8 w-auto object-contain drop-shadow-sm" />
@@ -258,12 +265,14 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto transition-all duration-300">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full mx-auto transition-all duration-300 print:!p-0 print:!m-0">
           <Outlet />
         </main>
       </div>
       
-      <AIAssistant />
+      <div className="print:hidden">
+        <AIAssistant />
+      </div>
     </div>
   );
 }

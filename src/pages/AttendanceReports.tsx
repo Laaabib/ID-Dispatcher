@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, where, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
-import { Calendar, Search, Download, Filter, FileText } from 'lucide-react';
+import { Calendar, Search, Download, Filter, FileText, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadMonthlyAttendancePDF, MonthlyAttendanceData } from '../lib/pdf';
+import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 export default function AttendanceReports() {
   const { role, user } = useAuth();
@@ -86,6 +87,33 @@ export default function AttendanceReports() {
   });
 
   const departments = Array.from(new Set(Object.values(employees).map((e: any) => e.department).filter(Boolean)));
+
+  const heatmapData = useMemo(() => {
+    const data: any[] = [];
+    const deptMap: Record<string, Record<string, number>> = {};
+
+    filteredAttendance.forEach(record => {
+      // we only want to show heatmap for Present-like statuses
+      if (['Present', 'Late', 'Half Day'].includes(record.status)) {
+        const emp = employees[record.employeeId] || {};
+        const dept = emp.department || 'Unknown';
+        const dateKey = record.date;
+        if (!deptMap[dateKey]) deptMap[dateKey] = {};
+        if (!deptMap[dateKey][dept]) deptMap[dateKey][dept] = 0;
+        deptMap[dateKey][dept]++;
+      }
+    });
+
+    Object.entries(deptMap).forEach(([date, depts]) => {
+      Object.entries(depts).forEach(([department, count]) => {
+        data.push({ date, department, count });
+      });
+    });
+
+    return data.sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredAttendance, employees]);
+
+  const maxCount = Math.max(...heatmapData.map(d => d.count), 1);
 
   const handleExportCSV = () => {
     if (filteredAttendance.length === 0) {
@@ -249,6 +277,59 @@ export default function AttendanceReports() {
             )}
           </div>
         </div>
+
+        {heatmapData.length > 0 && (
+          <div className="mb-8 border border-slate-200 dark:border-slate-800 rounded-xl p-6 bg-slate-50 dark:bg-slate-900/50">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+              <Activity className="w-4 h-4 text-primary-500" /> Attendance Heatmap (By Department)
+            </h3>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
+                  <XAxis 
+                    type="category" 
+                    dataKey="date" 
+                    name="Date" 
+                    allowDuplicatedCategory={false}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    tickMargin={10}
+                  />
+                  <YAxis 
+                    type="category" 
+                    dataKey="department" 
+                    name="Department" 
+                    allowDuplicatedCategory={false}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    width={100}
+                  />
+                  <ZAxis type="number" dataKey="count" range={[200, 800]} name="Attendance Count" />
+                  <Tooltip 
+                    cursor={{ strokeDasharray: '3 3' }} 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
+                            <p className="font-semibold text-sm mb-1">{data.date}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{data.department}</p>
+                            <p className="text-primary-600 font-bold mt-1">{data.count} Present</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Scatter data={heatmapData} shape="square">
+                    {heatmapData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={`rgba(59, 130, 246, ${0.4 + 0.6 * (entry.count / maxCount)})`} />
+                    ))}
+                  </Scatter>
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">

@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Calendar, Clock, CheckCircle2, XCircle, Settings, Cpu, Wifi, Copy, ExternalLink, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function Attendance() {
+export default function Attendance({ embedded = false }: { embedded?: boolean }) {
   const { user, role } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'mark' | 'devices'>('mark');
@@ -198,31 +198,52 @@ startBridge();
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-primary-600" />
-            Attendance System
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400">Mark attendance or manage physical devices</p>
-        </div>
+    <div className={embedded ? "space-y-4 max-w-4xl mx-auto" : "max-w-4xl mx-auto space-y-6"}>
+      {!embedded && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-primary-600" />
+              Attendance System
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400">Mark attendance or manage physical devices</p>
+          </div>
 
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('mark')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'mark' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Mark Attendance
-          </button>
-          <button
-            onClick={() => setActiveTab('devices')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'devices' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Device Settings
-          </button>
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('mark')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'mark' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Mark Attendance
+            </button>
+            <button
+              onClick={() => setActiveTab('devices')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'devices' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Device Settings
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {embedded && (
+        <div className="flex justify-end mb-4">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('mark')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'mark' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Mark Attendance
+            </button>
+            <button
+              onClick={() => setActiveTab('devices')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'devices' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Device Settings
+            </button>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'mark' ? (
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">

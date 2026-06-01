@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download, ArrowDownToLine, ArrowUpFromLine, History, Wrench } from 'lucide-react';
+import { Package, Monitor, Plus, Trash2, Upload, Search, Filter, FileText, Download, ArrowDownToLine, ArrowUpFromLine, History, Wrench, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -107,6 +107,18 @@ export default function InventoryManagement() {
 
   // Details Modal State
   const [detailsModal, setDetailsModal] = useState<{isOpen: boolean, item: ItemInventory | ToolInventory | null}>({isOpen: false, item: null});
+  
+  // Edit Asset Modal State
+  const [editAssetModal, setEditAssetModal] = useState<{isOpen: boolean, asset: AssetInventory | null}>({isOpen: false, asset: null});
+  const [editAssetData, setEditAssetData] = useState({
+    name: '',
+    category: '',
+    serialNumber: '',
+    assignedTo: '',
+    status: '',
+    remarks: '',
+    createdAt: ''
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -293,6 +305,55 @@ export default function InventoryManagement() {
       toast.success("Asset deleted successfully");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'asset_inventory');
+    }
+  };
+
+  const openEditAssetModal = (asset: AssetInventory) => {
+    setEditAssetData({
+      name: asset.name,
+      category: asset.category,
+      serialNumber: asset.serialNumber,
+      assignedTo: asset.assignedTo,
+      status: asset.status,
+      remarks: asset.remarks,
+      createdAt: asset.createdAt.split('T')[0]
+    });
+    setEditAssetModal({ isOpen: true, asset });
+  };
+
+  const handleUpdateAsset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editAssetModal.asset) return;
+
+    try {
+      const assetRef = doc(db, 'asset_inventory', editAssetModal.asset.id);
+      
+      const newCreatedAt = new Date(editAssetData.createdAt);
+      // Keep existing time portion if possible, or set to start of day
+      const existingDate = new Date(editAssetModal.asset.createdAt);
+      if (!isNaN(existingDate.getTime())) {
+        newCreatedAt.setHours(existingDate.getHours(), existingDate.getMinutes(), existingDate.getSeconds());
+      }
+      
+      const assetDataToUpdate = { ...editAssetModal.asset };
+      delete (assetDataToUpdate as any).id;
+
+      await setDoc(assetRef, {
+        ...assetDataToUpdate,
+        name: editAssetData.name,
+        category: editAssetData.category,
+        serialNumber: editAssetData.serialNumber,
+        assignedTo: editAssetData.assignedTo,
+        status: editAssetData.status,
+        remarks: editAssetData.remarks,
+        createdAt: newCreatedAt.toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      setEditAssetModal({ isOpen: false, asset: null });
+      toast.success("Asset updated successfully");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'asset_inventory');
     }
   };
 
@@ -500,6 +561,50 @@ export default function InventoryManagement() {
     doc.save(`${item.name}_history.pdf`);
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add Header
+    doc.setFontSize(18);
+    let title = '';
+    let head: string[][] = [];
+    let body: any[][] = [];
+    let fileName = '';
+
+    if (activeTab === 'items') {
+      title = 'Item Inventory Report';
+      head = [['Name', 'Category', 'Quantity', 'Unit', 'Remarks']];
+      body = filteredItems.map(item => [item.name, item.category, item.quantity, item.unit || '', item.remarks || '']);
+      fileName = 'Item_Inventory_Report.pdf';
+    } else if (activeTab === 'assets') {
+      title = 'Asset Inventory Report';
+      head = [['Name', 'Category', 'Serial Number', 'Assigned To', 'Status', 'Remarks']];
+      body = filteredAssets.map(asset => [asset.name, asset.category, asset.serialNumber || '', asset.assignedTo || '', asset.status || '', asset.remarks || '']);
+      fileName = 'Asset_Inventory_Report.pdf';
+    } else {
+      title = 'Tool Inventory Report';
+      head = [['Name', 'Category', 'Quantity', 'Assigned To', 'Remarks']];
+      body = filteredTools.map(tool => [tool.name, tool.category, tool.quantity, tool.assignedTo || '', tool.remarks || '']);
+      fileName = 'Tool_Inventory_Report.pdf';
+    }
+
+    doc.text(title, 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Report Generated: ${new Date().toLocaleString()}`, 14, 30);
+
+    autoTable(doc, {
+      startY: 40,
+      head: head,
+      body: body,
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229] },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(fileName);
+  };
+
   // Get unique categories for the active tab
   const categories = Array.from(new Set(
     activeTab === 'items' 
@@ -604,7 +709,16 @@ export default function InventoryManagement() {
             title="Export Current Inventory to Excel"
           >
             <FileText className="w-4 h-4" />
-            Export
+            Export Excel
+          </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleExportPDF}
+            title="Export Current Inventory to PDF"
+          >
+            <Download className="w-4 h-4" />
+            Export PDF
           </Button>
           <Button 
             variant="outline" 
@@ -924,9 +1038,14 @@ export default function InventoryManagement() {
                           <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{asset.assignedTo || '-'}</td>
                           <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{asset.status || '-'}</td>
                           <td className="px-6 py-4 text-right">
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteAsset(asset.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" title="Edit Asset" onClick={() => openEditAssetModal(asset)} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteAsset(asset.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1002,6 +1121,70 @@ export default function InventoryManagement() {
           </table>
         </div>
       </div>
+      
+      {editAssetModal.isOpen && editAssetModal.asset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
+                Edit Asset - {editAssetModal.asset.name}
+              </h2>
+              
+              <form onSubmit={handleUpdateAsset} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Asset Name</Label>
+                    <Input value={editAssetData.name} onChange={e => setEditAssetData({...editAssetData, name: e.target.value})} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Input value={editAssetData.category} onChange={e => setEditAssetData({...editAssetData, category: e.target.value})} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Serial Number</Label>
+                    <Input value={editAssetData.serialNumber} onChange={e => setEditAssetData({...editAssetData, serialNumber: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Assigned To</Label>
+                    <Input value={editAssetData.assignedTo} onChange={e => setEditAssetData({...editAssetData, assignedTo: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <select 
+                      className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300" 
+                      value={editAssetData.status} 
+                      onChange={e => setEditAssetData({...editAssetData, status: e.target.value})}
+                    >
+                      <option value="In Store">In Store</option>
+                      <option value="In Use">In Use</option>
+                      <option value="Under Repair">Under Repair</option>
+                      <option value="Disposed">Disposed</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date</Label>
+                    <Input type="date" value={editAssetData.createdAt} onChange={e => setEditAssetData({...editAssetData, createdAt: e.target.value})} required />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Remarks</Label>
+                    <Input value={editAssetData.remarks} onChange={e => setEditAssetData({...editAssetData, remarks: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <Button type="button" variant="outline" onClick={() => setEditAssetModal({isOpen: false, asset: null})}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {transactionModal.isOpen && transactionModal.item && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden">

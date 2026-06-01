@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Plus, Edit2, Trash2, Search, Users, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function Employees() {
+export default function Employees({ embedded = false }: { embedded?: boolean }) {
   const { role } = useAuth();
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,36 +182,63 @@ export default function Employees() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary-600" />
-            Employee Management
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400">Manage employee records and details</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={handleExportTemplate} className="gap-2">
-            <Download className="w-4 h-4" /> Template
-          </Button>
-          <div className="relative">
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleImportCSV}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              title="Import CSV"
-            />
-            <Button variant="outline" className="gap-2 pointer-events-none">
-              <Upload className="w-4 h-4" /> Import CSV
+    <div className={embedded ? "space-y-4" : "space-y-6"}>
+      {!embedded && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-6 h-6 text-primary-600" />
+              Employee Management
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400">Manage employee records and details</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={handleExportTemplate} className="gap-2">
+              <Download className="w-4 h-4" /> Template
+            </Button>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleImportCSV}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                title="Import CSV"
+              />
+              <Button variant="outline" className="gap-2 pointer-events-none">
+                <Upload className="w-4 h-4" /> Import CSV
+              </Button>
+            </div>
+            <Button onClick={() => handleOpenModal()} className="gap-2">
+              <Plus className="w-4 h-4" /> Add Employee
             </Button>
           </div>
-          <Button onClick={() => handleOpenModal()} className="gap-2">
-            <Plus className="w-4 h-4" /> Add Employee
-          </Button>
         </div>
-      </div>
+      )}
+
+      {embedded && (
+        <div className="flex justify-end mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={handleExportTemplate} className="gap-2">
+              <Download className="w-4 h-4" /> Template
+            </Button>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleImportCSV}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                title="Import CSV"
+              />
+              <Button variant="outline" className="gap-2 pointer-events-none">
+                <Upload className="w-4 h-4" /> Import CSV
+              </Button>
+            </div>
+            <Button onClick={() => handleOpenModal()} className="gap-2">
+              <Plus className="w-4 h-4" /> Add Employee
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
@@ -314,13 +341,22 @@ export default function Employees() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Department</label>
-                <input
-                  type="text"
+                <select
                   required
                   value={formData.department}
                   onChange={(e) => setFormData({...formData, department: e.target.value})}
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white"
-                />
+                >
+                    <option value="" disabled>Select Department</option>
+                    <option value="F & B Service">F & B Service</option>
+                    <option value="F & B Production">F & B Production</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Front Office">Front Office</option>
+                    <option value="Accounts & Finance">Accounts & Finance</option>
+                    <option value="Admin & General">Admin & General</option>
+                    <option value="Housekeeping">Housekeeping</option>
+                    <option value="Safety & Security">Safety & Security</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Designation</label>

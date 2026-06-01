@@ -270,6 +270,28 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["employeeId", "date", "status", "createdAt", "updatedAt"]
+    },
+    "LeaveApplication": {
+      "title": "LeaveApplication",
+      "description": "An employee leave application.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "department": { "type": "string" },
+        "leaveType": { "type": "string", "enum": ["Annual", "Sick", "Casual", "Maternity", "Paternity", "Other"] },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "reason": { "type": "string" },
+        "employeeSignature": { "type": "string" },
+        "hodSignature": { "type": "string" },
+        "adminSignature": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Approved by HOD", "Approved by Admin", "Rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "employeeName", "leaveType", "startDate", "endDate", "reason", "employeeSignature", "status", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -326,6 +348,12 @@
         "$ref": "#/entities/Attendance"
       },
       "description": "Stores daily attendance records."
+    },
+    "leave_applications/{leaveId}": {
+      "schema": {
+        "$ref": "#/entities/LeaveApplication"
+      },
+      "description": "Stores leave applications."
     }
   }
 }

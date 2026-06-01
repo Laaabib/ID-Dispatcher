@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import InventoryReports from './InventoryReports';
 import AttendanceReports from './AttendanceReports';
 import StoreReports from './StoreReports';
-import { BarChart2, FileText, Package, Store } from 'lucide-react';
+import HRReports from './HRReports';
+import { BarChart2, FileText, Package, Store, Users } from 'lucide-react';
 
 export default function Reports() {
   const { role } = useAuth();
@@ -48,6 +49,19 @@ export default function Reports() {
             Store Reports
           </button>
         )}
+        {(role === 'admin' || role === 'hr_manager') && (
+          <button
+            onClick={() => setActiveTab('hr')}
+            className={`flex items-center gap-2 pb-3 px-4 font-medium text-sm transition-all duration-300 ease-out whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:transition-all after:duration-300 hover:-translate-y-0.5 ${
+              activeTab === 'hr'
+                ? 'text-primary-600 dark:text-primary-400 after:w-full'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 after:w-0 hover:after:w-full'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            HR Reports
+          </button>
+        )}
         <button
           onClick={() => setActiveTab('attendance')}
           className={`flex items-center gap-2 pb-3 px-4 font-medium text-sm transition-all duration-300 ease-out whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:transition-all after:duration-300 hover:-translate-y-0.5 ${
@@ -67,6 +81,9 @@ export default function Reports() {
         )}
         {activeTab === 'store' && (role === 'admin' || role === 'inventory_manager') && (
           <StoreReports />
+        )}
+        {activeTab === 'hr' && (role === 'admin' || role === 'hr_manager') && (
+          <HRReports />
         )}
         {activeTab === 'attendance' && (
           <AttendanceReports />
