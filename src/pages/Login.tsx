@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -6,7 +6,6 @@ import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { IdCard, ShieldCheck, Clock, FileText, ChevronRight, User, UserPlus } from 'lucide-react';
-import ReCAPTCHA from "react-google-recaptcha";
 import logoImg from '../assets/Logo.svg';
 
 export default function Login() {
@@ -16,10 +15,6 @@ export default function Login() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  // CAPTCHA State
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   if (user) {
     return <Navigate to="/" replace />;
@@ -29,11 +24,6 @@ export default function Login() {
     e.preventDefault();
     setError('');
     
-    if (!captchaToken) {
-      setError('Please verify that you are not a robot.');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -51,8 +41,6 @@ export default function Login() {
       } else {
         setError(err.message || 'An error occurred during authentication');
       }
-      recaptchaRef.current?.reset();
-      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -191,15 +179,6 @@ export default function Login() {
                         required
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-2 flex justify-center py-2">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                      onChange={(token) => setCaptchaToken(token)}
-                      theme="light"
-                    />
                   </div>
 
                   <Button 
