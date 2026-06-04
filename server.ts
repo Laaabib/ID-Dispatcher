@@ -20,6 +20,37 @@ async function startServer() {
 
   app.use(express.json());
 
+  // AI Assistant Route
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { userMsg } = req.body;
+      const apiKey = process.env.GEMINI_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "API key is not configured." });
+      }
+
+      // Dynamic import to avoid client-side bloat in the server bundle if possible, or just standard import
+      const { GoogleGenAI, ThinkingLevel } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: userMsg,
+        config: {
+          systemInstruction: "You are 'Padma', a helpful AI assistant for the Padma AWT Rest House ID Manager application. Your primary language is Bengali (Bangla). You MUST respond to all queries in Bengali unless the user explicitly requests another language. When greeting, use 'Assalamualaikum' (আসসালামু আলাইকুম). Your sole purpose is to help users with tasks, policies, procedures, and information related to this specific application.",
+          thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+          tools: [{ googleSearch: {} }],
+        },
+      });
+
+      res.json({ text: response.text });
+    } catch (error: any) {
+      console.error("AI Route Error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate response." });
+    }
+  });
+
   // API Route for ZKTeco Bridge
   app.post("/api/attendance/log", async (req, res) => {
     const { deviceId, logs } = req.body;

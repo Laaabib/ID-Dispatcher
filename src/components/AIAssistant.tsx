@@ -1,17 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
-
-let aiInstance: GoogleGenAI | null = null;
-const getAI = () => {
-  if (!aiInstance && process.env.GEMINI_API_KEY) {
-    aiInstance = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  }
-  return aiInstance;
-};
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,21 +30,20 @@ export default function AIAssistant() {
     setLoading(true);
 
     try {
-      const ai = getAI();
-      if (!ai) {
-        throw new Error("AI is not configured. Missing API key.");
-      }
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: userMsg,
-        config: {
-          systemInstruction: "You are 'Padma', a helpful AI assistant for the Padma AWT Rest House ID Manager application. Your primary language is Bengali (Bangla). You MUST respond to all queries in Bengali unless the user explicitly requests another language. When greeting, use 'Assalamualaikum' (আসসালামু আলাইকুম) instead of 'Namaskar' or 'নমস্কার'. Your sole purpose is to help users with tasks, policies, procedures, and information related to this specific application (ID cards, nametags, attendance, employee management, daily works, and inventory). If a user asks a question that is NOT related to this application, its features, or its domain, you MUST politely refuse to answer in Bengali and remind them that you can only assist with Padma AWT Rest House ID Manager related queries.",
-          thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-          tools: [{ googleSearch: {} }],
-        },
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userMsg })
       });
 
-      setMessages(prev => [...prev, { role: 'model', text: response.text || 'I could not find an answer.' }]);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      setMessages(prev => [...prev, { role: 'model', text: data.text || 'I could not find an answer.' }]);
     } catch (error) {
       console.error('AI Error:', error);
       setMessages(prev => [...prev, { role: 'model', text: 'Sorry, I encountered an error while processing your request.' }]);
