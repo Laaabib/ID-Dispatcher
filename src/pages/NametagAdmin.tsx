@@ -148,7 +148,8 @@ export default function NametagAdmin() {
 
                   {['admin', 'admin_approver'].includes(role || '') && (
                     <Button 
-                      variant="success" 
+                      variant="default" 
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
                       size="sm" 
                       disabled={updating === tag.id || tag.status === 'Approved'}
                       onClick={() => updateStatus(tag.id, 'Approved')}

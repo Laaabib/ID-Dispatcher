@@ -46,7 +46,7 @@ export default function ApplicationForm() {
     localStorage.setItem('applicationFormData', JSON.stringify(formData));
   }, [formData]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 

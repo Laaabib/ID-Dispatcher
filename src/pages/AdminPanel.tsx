@@ -167,7 +167,8 @@ export default function AdminPanel() {
 
                   {['admin', 'admin_approver'].includes(role || '') && (
                     <Button 
-                      variant="success" 
+                      variant="default" 
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
                       size="sm" 
                       disabled={updating === app.id || app.status === 'Approved'}
                       onClick={() => updateStatus(app.id, 'Approved')}
