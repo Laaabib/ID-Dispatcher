@@ -59,7 +59,7 @@ export default function NametagForm() {
       <Card className="border-slate-200/60 shadow-lg shadow-slate-200/40">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-6">
           <div className="flex items-center gap-4">
-            <img src={logoImg} alt="Padma id Manager" className="h-14 w-14 object-contain drop-shadow-sm" onError={(e) => {
+            <img src={logoImg} alt="Padma AWT Rest House ERP System" className="h-14 w-14 object-contain drop-shadow-sm" onError={(e) => {
               e.currentTarget.style.display = 'none';
             }} />
             <div>

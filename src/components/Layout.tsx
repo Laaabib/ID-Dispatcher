@@ -96,7 +96,7 @@ export default function Layout() {
         <div className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-xl flex flex-col transition-transform duration-300 ease-in-out transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-800">
             <Link to="/" className="flex items-center gap-3 transition-all duration-200 hover:opacity-80" onClick={() => setMobileMenuOpen(false)}>
-              <img src={logoImg} alt="Padma id Manager" className="h-8 w-auto object-contain drop-shadow-sm" />
+              <img src={logoImg} alt="Padma AWT Rest House ERP System" className="h-8 w-auto object-contain drop-shadow-sm" />
               <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
                 Padma AWT<br/>Rest House
               </span>
@@ -134,7 +134,7 @@ export default function Layout() {
 
         <div className={`h-16 flex items-center border-b border-slate-200 dark:border-slate-800 transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>
           <Link to="/" className="flex items-center gap-3 transition-all duration-200 hover:opacity-80">
-            <img src={logoImg} alt="Padma id Manager" className={`${isCollapsed ? 'h-8' : 'h-10'} w-auto object-contain drop-shadow-sm transition-all duration-300`} />
+            <img src={logoImg} alt="Padma AWT Rest House ERP System" className={`${isCollapsed ? 'h-8' : 'h-10'} w-auto object-contain drop-shadow-sm transition-all duration-300`} />
             {!isCollapsed && (
               <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
                 Padma AWT<br/>Rest House

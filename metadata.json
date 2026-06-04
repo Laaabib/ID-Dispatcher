@@ -1,5 +1,5 @@
 {
-  "name": "Padma id Manager",
-  "description": "A mobile-first web application for managing ID card and nametag distribution, featuring an application form, admin panel, and login system.",
+  "name": "Padma AWT Rest House ERP System",
+  "description": "A comprehensive ERP system for Padma AWT Rest House.",
   "requestFramePermissions": []
 }

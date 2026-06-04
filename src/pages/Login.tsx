@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -6,6 +6,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { IdCard, ShieldCheck, Clock, FileText, ChevronRight, User, UserPlus } from 'lucide-react';
+import ReCAPTCHA from "react-google-recaptcha";
 import logoImg from '../assets/Logo.svg';
 
 export default function Login() {
@@ -17,27 +18,19 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   
   // CAPTCHA State
-  const [captchaNum1, setCaptchaNum1] = useState(Math.floor(Math.random() * 10) + 1);
-  const [captchaNum2, setCaptchaNum2] = useState(Math.floor(Math.random() * 10) + 1);
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   if (user) {
     return <Navigate to="/" replace />;
   }
 
-  const refreshCaptcha = () => {
-    setCaptchaNum1(Math.floor(Math.random() * 10) + 1);
-    setCaptchaNum2(Math.floor(Math.random() * 10) + 1);
-    setCaptchaAnswer('');
-  };
-
   const handleEmployeeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
-      setError('Incorrect CAPTCHA answer. Please try again.');
-      refreshCaptcha();
+    if (!captchaToken) {
+      setError('Please verify that you are not a robot.');
       return;
     }
 
@@ -58,7 +51,8 @@ export default function Login() {
       } else {
         setError(err.message || 'An error occurred during authentication');
       }
-      refreshCaptcha();
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -78,21 +72,21 @@ export default function Login() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
             <div className="bg-white p-2 rounded-xl">
-              <img src={logoImg} alt="Padma id Manager" className="h-10 w-10 object-contain" onError={(e) => {
+              <img src={logoImg} alt="Padma AWT Rest House ERP System" className="h-10 w-10 object-contain" onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }} />
               <IdCard className="hidden w-10 h-10 text-primary-600" />
             </div>
-            <span className="text-xl font-bold tracking-tight"><span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '1.4em', fontWeight: 'normal' }} className="text-primary-400">Padma</span> id Manager</span>
+            <span className="text-xl font-bold tracking-tight text-white mb-0 drop-shadow-md">Padma AWT Rest House ERP System</span>
           </div>
 
           <div className="max-w-md mt-20">
             <h1 className="text-4xl font-bold tracking-tight mb-6 leading-tight">
-              <span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '1.4em', fontWeight: 'normal' }} className="text-primary-400">Padma</span> <br/><span className="text-white">id Manager</span>
+              Padma AWT Rest House <br/><span className="text-primary-300">ERP System</span>
             </h1>
             <p className="text-primary-100 dark:text-slate-400 text-lg mb-10 leading-relaxed">
-              Streamline your ID card and nametag requests. A secure, centralized platform for all personnel identification needs.
+              Streamline your HR, inventory, maintenance, and administrative operations with a secure, centralized ERP platform.
             </p>
 
             <div className="space-y-6">
@@ -199,22 +193,13 @@ export default function Login() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="captcha" className="dark:text-slate-300">Security Check: What is {captchaNum1} + {captchaNum2}?</Label>
-                    <div className="flex gap-3">
-                      <Input 
-                        id="captcha" 
-                        type="number"
-                        placeholder="Answer" 
-                        className="dark:bg-slate-800/50 dark:border-slate-700 dark:text-white dark:placeholder-slate-500"
-                        value={captchaAnswer}
-                        onChange={(e) => setCaptchaAnswer(e.target.value)}
-                        required
-                      />
-                      <Button type="button" variant="outline" onClick={refreshCaptcha} className="px-3 shrink-0 dark:border-slate-700 dark:text-slate-300">
-                        Refresh
-                      </Button>
-                    </div>
+                  <div className="space-y-2 flex justify-center py-2">
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                      onChange={(token) => setCaptchaToken(token)}
+                      theme="light"
+                    />
                   </div>
 
                   <Button 
