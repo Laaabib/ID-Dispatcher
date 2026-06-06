@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -22,7 +22,7 @@ interface Nametag {
 }
 
 export default function NametagAdmin() {
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const [nametags, setNametags] = useState<Nametag[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -54,16 +54,35 @@ export default function NametagAdmin() {
     return <Navigate to="/" replace />;
   }
 
-  const updateStatus = async (id: string, newStatus: string) => {
-    setUpdating(id);
+  const logActivity = async (action: string, tagId: string, tagName: string) => {
+    if (!user) return;
     try {
-      await updateDoc(doc(db, 'nametags', id), {
+      await addDoc(collection(db, 'activityLogs'), {
+        userId: user.uid,
+        userName: user.displayName || user.email?.split('@')[0] || 'Unknown Admin',
+        userEmail: user.email,
+        action,
+        resourceId: tagId,
+        resourceName: tagName,
+        resourceType: 'Nametag',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to log activity', error);
+    }
+  };
+
+  const updateStatus = async (tag: Nametag, newStatus: string) => {
+    setUpdating(tag.id);
+    try {
+      await updateDoc(doc(db, 'nametags', tag.id), {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
       toast.success(`Nametag status updated to ${newStatus}`);
+      await logActivity(newStatus, tag.id, tag.name);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `nametags/${id}`);
+      handleFirestoreError(error, OperationType.UPDATE, `nametags/${tag.id}`);
     } finally {
       setUpdating(null);
     }
@@ -140,7 +159,7 @@ export default function NametagAdmin() {
                       variant="outline" 
                       size="sm" 
                       disabled={updating === tag.id || tag.status === 'Pending'}
-                      onClick={() => updateStatus(tag.id, 'Pending')}
+                      onClick={() => updateStatus(tag, 'Pending')}
                     >
                       Set Pending
                     </Button>
@@ -152,7 +171,7 @@ export default function NametagAdmin() {
                       className="bg-emerald-600 hover:bg-emerald-700 text-white"
                       size="sm" 
                       disabled={updating === tag.id || tag.status === 'Approved'}
-                      onClick={() => updateStatus(tag.id, 'Approved')}
+                      onClick={() => updateStatus(tag, 'Approved')}
                     >
                       Approve
                     </Button>
@@ -164,7 +183,7 @@ export default function NametagAdmin() {
                         variant="default" 
                         size="sm" 
                         disabled={updating === tag.id || tag.status === 'Printed'}
-                        onClick={() => updateStatus(tag.id, 'Printed')}
+                        onClick={() => updateStatus(tag, 'Printed')}
                       >
                         Mark Printed
                       </Button>
@@ -172,7 +191,7 @@ export default function NametagAdmin() {
                         variant="secondary" 
                         size="sm" 
                         disabled={updating === tag.id || tag.status === 'Distributed'}
-                        onClick={() => updateStatus(tag.id, 'Distributed')}
+                        onClick={() => updateStatus(tag, 'Distributed')}
                       >
                         Mark Distributed
                       </Button>
@@ -184,7 +203,7 @@ export default function NametagAdmin() {
                       variant="destructive" 
                       size="sm" 
                       disabled={updating === tag.id || tag.status === 'Rejected'}
-                      onClick={() => updateStatus(tag.id, 'Rejected')}
+                      onClick={() => updateStatus(tag, 'Rejected')}
                     >
                       Reject
                     </Button>

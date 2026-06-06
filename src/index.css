@@ -146,6 +146,46 @@ body {
   filter: invert(1) hue-rotate(180deg);
 }
 
+/* Theme Variations */
+.theme-bd-army {
+  --color-primary-50: #f4f7f4;
+  --color-primary-100: #e3ebe2;
+  --color-primary-200: #c6d9c4;
+  --color-primary-300: #9cbda0;
+  --color-primary-400: #749e79;
+  --color-primary-500: #54815a;
+  --color-primary-600: #406646;
+  --color-primary-700: #35533a;
+  --color-primary-800: #2c4231;
+  --color-primary-900: #253729;
+}
+
+.theme-ocean {
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-200: #99f6e4;
+  --color-primary-300: #5eead4;
+  --color-primary-400: #2dd4bf;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-800: #115e59;
+  --color-primary-900: #134e4a;
+}
+
+.theme-crimson {
+  --color-primary-50: #fff1f2;
+  --color-primary-100: #ffe4e6;
+  --color-primary-200: #fecdd3;
+  --color-primary-300: #fda4af;
+  --color-primary-400: #fb7185;
+  --color-primary-500: #f43f5e;
+  --color-primary-600: #e11d48;
+  --color-primary-700: #be123c;
+  --color-primary-800: #9f1239;
+  --color-primary-900: #881337;
+}
+
 /* Colorblind High Contrast Overrides */
 .colorblind {
   /* High contrast blue instead of indigo */
@@ -183,4 +223,93 @@ body {
 }
 .colorblind .bg-amber-50, .colorblind .bg-amber-100 {
   background-color: #ffedd5 !important;
+}
+
+/* Print Media Queries for Forms & ID Cards */
+@media print {
+  @page {
+    margin: 0.5cm;
+    size: auto;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+
+  /* Force background colors and imagery to be printed */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide common navigation & interactive elements */
+  .no-print,
+  button,
+  nav,
+  header:not(.print-header),
+  footer:not(.print-footer) {
+    display: none !important;
+  }
+
+  /* Remove shadows, blurs and visual clutter */
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  [class*="shadow-"] {
+    box-shadow: none !important;
+  }
+
+  /* Structural resets for main layout */
+  .container, 
+  main, 
+  #root > div {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Ensure Cards break well across pages */
+  .card, 
+  .border-slate-200\/60,
+  [class*="bg-white"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #e2e8f0 !important;
+    background: white !important;
+  }
+
+  /* Specific tweaks for forms and signatures */
+  input, select, textarea {
+    border: 1px solid #cbd5e1 !important;
+    background: transparent !important;
+    color: #0f172a !important;
+  }
+
+  img {
+    max-width: 100% !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ID Card specific print styles (if a container gets targeted) */
+  .id-card-print {
+    width: 85.6mm;
+    height: 53.98mm;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin: 10px auto;
+    border: 1px dashed #ccc !important; /* Cut-line guide */
+  }
+
+  /* Hide scrollbars during print */
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
 }

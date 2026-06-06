@@ -292,9 +292,31 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "employeeName", "leaveType", "startDate", "endDate", "reason", "employeeSignature", "status", "createdAt", "updatedAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "An administrative action log.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "resourceId": { "type": "string" },
+        "resourceName": { "type": "string" },
+        "resourceType": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "action", "resourceId", "resourceName", "resourceType", "timestamp"]
     }
   },
   "firestore": {
+    "activityLogs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/ActivityLog"
+      },
+      "description": "Stores administrative activity logs."
+    },
     "users/{userId}": {
       "schema": {
         "$ref": "#/entities/User"

@@ -3,8 +3,9 @@ import { collection, query, onSnapshot, addDoc, updateDoc, doc, deleteDoc, serve
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
-import { Plus, Edit2, Trash2, Search, Users, Download, Upload } from 'lucide-react';
+import { Users, Download, Upload, Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 export default function Employees({ embedded = false }: { embedded?: boolean }) {
   const { role } = useAuth();
@@ -13,6 +14,7 @@ export default function Employees({ embedded = false }: { embedded?: boolean }) 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -38,14 +40,14 @@ export default function Employees({ embedded = false }: { embedded?: boolean }) 
   }, []);
 
   const handleOpenModal = (employee?: any) => {
-    if (employee) {
+    if (employee && employee.id) {
       setFormData({
-        name: employee.name,
-        employeeId: employee.employeeId,
-        department: employee.department,
-        designation: employee.designation,
+        name: employee.name || '',
+        employeeId: employee.employeeId || '',
+        department: employee.department || '',
+        designation: employee.designation || '',
         joiningDate: employee.joiningDate || '',
-        status: employee.status
+        status: employee.status || 'active'
       });
       setEditingId(employee.id);
     } else {
@@ -85,13 +87,15 @@ export default function Employees({ embedded = false }: { embedded?: boolean }) 
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this employee?")) {
+  const handleDelete = async () => {
+    if (deleteConfirmId) {
       try {
-        await deleteDoc(doc(db, 'employees', id));
+        await deleteDoc(doc(db, 'employees', deleteConfirmId));
         toast.success("Employee deleted successfully");
       } catch (error) {
         handleFirestoreError(error, OperationType.DELETE, 'employees');
+      } finally {
+        setDeleteConfirmId(null);
       }
     }
   };
@@ -172,9 +176,9 @@ export default function Employees({ embedded = false }: { embedded?: boolean }) 
   };
 
   const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (role !== 'admin' && role !== 'admin_approver' && role !== 'it_approver') {
@@ -288,10 +292,10 @@ export default function Employees({ embedded = false }: { embedded?: boolean }) 
                     <td className="py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleOpenModal(emp)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30">
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-4 h-4 pointer-events-none" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(emp.id)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30">
-                          <Trash2 className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmId(emp.id)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30">
+                          <Trash2 className="w-4 h-4 pointer-events-none" />
                         </Button>
                       </div>
                     </td>
@@ -400,6 +404,14 @@ export default function Employees({ embedded = false }: { embedded?: boolean }) 
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirmId}
+        title="Delete Employee"
+        message="Are you sure you want to delete this employee? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import ApplicationForm from './pages/ApplicationForm';
 import AdminPanel from './pages/AdminPanel';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminActivityLog from './pages/AdminActivityLog';
 import Reports from './pages/Reports';
 import NametagForm from './pages/NametagForm';
 import NametagAdmin from './pages/NametagAdmin';
@@ -20,8 +21,11 @@ import Attendance from './pages/Attendance';
 import UserManagement from './pages/UserManagement';
 import LeaveApplication from './pages/LeaveApplication';
 import LeaveAdmin from './pages/LeaveAdmin';
-
 import HRManagement from './pages/HRManagement';
+import Departments from './pages/Departments';
+import Designations from './pages/Designations';
+import Trainees from './pages/Trainees';
+import IDGeneration from './pages/IDGeneration';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -55,6 +59,7 @@ export default function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="apply" element={<ApplicationForm />} />
                 <Route path="admin-dashboard" element={<AdminDashboard />} />
+                <Route path="activity-log" element={<AdminActivityLog />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="admin" element={<AdminPanel />} />
                 <Route path="nametag-request" element={<NametagForm />} />
@@ -65,6 +70,10 @@ export default function App() {
                 <Route path="attendance" element={<Attendance />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="hr" element={<HRManagement />} />
+                <Route path="departments" element={<Departments />} />
+                <Route path="designations" element={<Designations />} />
+                <Route path="trainees" element={<Trainees />} />
+                <Route path="employee-id-generation" element={<IDGeneration />} />
                 <Route path="leave" element={<LeaveApplication />} />
                 <Route path="leave-admin" element={<LeaveAdmin />} />
               </Route>

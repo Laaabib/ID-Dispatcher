@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { format } from 'date-fns';
 import { Navigate, Link } from 'react-router-dom';
-import { FileText, Badge as BadgeIcon, Clock, CheckCircle, XCircle, Printer, Send } from 'lucide-react';
+import { FileText, Badge as BadgeIcon, Printer, Send } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 interface Application {

@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import SignatureCanvas from "react-signature-canvas";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { generateLeavePDF } from "../lib/pdfGenerator";
+import { ConfirmDialog } from "../components/ui/confirm-dialog";
 import {
   Plus,
   X,
@@ -48,6 +49,7 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
   const [loading, setLoading] = useState(false);
   const [editingLeaveId, setEditingLeaveId] = useState<string | null>(null);
   const [printData, setPrintData] = useState<any | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const LEAVE_QUOTAS: Record<string, number> = {
     Annual: 14,
@@ -161,13 +163,15 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
     sigCanvas.current?.clear();
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this leave application?")) {
+  const handleDelete = async () => {
+    if (deleteConfirmId) {
       try {
-        await deleteDoc(doc(db, "leave_applications", id));
+        await deleteDoc(doc(db, "leave_applications", deleteConfirmId));
         toast.success("Leave application deleted");
       } catch (err) {
         handleFirestoreError(err, OperationType.DELETE, "leave_applications");
+      } finally {
+        setDeleteConfirmId(null);
       }
     }
   };
@@ -617,8 +621,8 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
                           <Button variant="outline" size="sm" onClick={() => handleEdit(leave)} className="h-8" title="Edit Application">
                             <Edit2 className="w-4 h-4 mr-1" /> Edit
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(leave.id)} className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50" title="Delete Application">
-                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                          <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(leave.id)} className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50" title="Delete Application">
+                            <Trash2 className="w-4 h-4 mr-1 pointer-events-none" /> Delete
                           </Button>
                         </>
                       )}
@@ -716,6 +720,13 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
         ))}
       </div>
     )}
+      <ConfirmDialog
+        isOpen={!!deleteConfirmId}
+        title="Delete Leave Application"
+        message="Are you sure you want to delete this leave application?"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
     </>
   );
 }

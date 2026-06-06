@@ -26,6 +26,7 @@ import {
 import { Input } from "../components/ui/input";
 import SignatureCanvas from "react-signature-canvas";
 import { generateLeavePDF } from "../lib/pdfGenerator";
+import { ConfirmDialog } from "../components/ui/confirm-dialog";
 
 export default function LeaveAdmin({ embedded = false }: { embedded?: boolean }) {
   const { user, role } = useAuth();
@@ -36,6 +37,8 @@ export default function LeaveAdmin({ embedded = false }: { embedded?: boolean })
   const [printData, setPrintData] = useState<any | null>(null);
   const [selectedLeaves, setSelectedLeaves] = useState<string[]>([]);
   const [isBulkSigning, setIsBulkSigning] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [rejectConfirmId, setRejectConfirmId] = useState<string | null>(null);
 
   const handlePrint = (leave: any) => {
     generateLeavePDF(leave, true);
@@ -141,14 +144,11 @@ export default function LeaveAdmin({ embedded = false }: { embedded?: boolean })
     }
   };
 
-  const handleReject = async (id: string) => {
-    if (
-      !window.confirm("Are you sure you want to reject this leave application?")
-    )
-      return;
+  const handleReject = async () => {
+    if (!rejectConfirmId) return;
 
     try {
-      await updateDoc(doc(db, "leave_applications", id), {
+      await updateDoc(doc(db, "leave_applications", rejectConfirmId), {
         status: "Rejected",
         updatedAt: new Date().toISOString(),
       });
@@ -156,22 +156,21 @@ export default function LeaveAdmin({ embedded = false }: { embedded?: boolean })
       setViewLeave(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, "leave_applications");
+    } finally {
+      setRejectConfirmId(null);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (
-      !window.confirm(
-        "Delete this leave application completely? This cannot be undone.",
-      )
-    )
-      return;
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return;
     try {
-      await deleteDoc(doc(db, "leave_applications", id));
+      await deleteDoc(doc(db, "leave_applications", deleteConfirmId));
       toast.success("Leave application deleted");
       setViewLeave(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, "leave_applications");
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -382,10 +381,10 @@ export default function LeaveAdmin({ embedded = false }: { embedded?: boolean })
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(leave.id)}
+                            onClick={() => setDeleteConfirmId(leave.id)}
                             className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 pointer-events-none" />
                           </Button>
                         )}
                       </div>
@@ -559,7 +558,7 @@ export default function LeaveAdmin({ embedded = false }: { embedded?: boolean })
               {viewLeave.status !== "Rejected" && (
                 <Button
                   variant="destructive"
-                  onClick={() => handleReject(viewLeave.id)}
+                  onClick={() => setRejectConfirmId(viewLeave.id)}
                   className="w-full sm:w-auto"
                 >
                   Reject Application
@@ -694,6 +693,22 @@ export default function LeaveAdmin({ embedded = false }: { embedded?: boolean })
         ))}
       </div>
     )}
+      <ConfirmDialog
+        isOpen={!!deleteConfirmId}
+        title="Delete Leave Application"
+        message="Are you sure you want to delete this leave application completely? This cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={!!rejectConfirmId}
+        title="Reject Leave Application"
+        message="Are you sure you want to reject this leave application?"
+        onConfirm={handleReject}
+        onCancel={() => setRejectConfirmId(null)}
+        confirmText="Reject"
+      />
     </>
   );
 }

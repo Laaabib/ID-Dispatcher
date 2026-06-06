@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 interface ItemInventory {
   id: string;
@@ -119,6 +120,9 @@ export default function InventoryManagement() {
     remarks: '',
     createdAt: ''
   });
+
+  // Delete Confirm State
+  const [deleteConfirmState, setDeleteConfirmState] = useState<{isOpen: boolean, type: 'item' | 'asset' | 'tool', id: string | null}>({isOpen: false, type: 'item', id: null});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -288,23 +292,27 @@ export default function InventoryManagement() {
     }
   };
 
-  const handleDeleteItem = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
+  const handleDeleteItem = async () => {
+    if (!deleteConfirmState.id) return;
     try {
-      await deleteDoc(doc(db, 'item_inventory', id));
+      await deleteDoc(doc(db, 'item_inventory', deleteConfirmState.id));
       toast.success("Item deleted successfully");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'item_inventory');
+    } finally {
+      setDeleteConfirmState({isOpen: false, type: 'item', id: null});
     }
   };
 
-  const handleDeleteAsset = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this asset?')) return;
+  const handleDeleteAsset = async () => {
+    if (!deleteConfirmState.id) return;
     try {
-      await deleteDoc(doc(db, 'asset_inventory', id));
+      await deleteDoc(doc(db, 'asset_inventory', deleteConfirmState.id));
       toast.success("Asset deleted successfully");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'asset_inventory');
+    } finally {
+      setDeleteConfirmState({isOpen: false, type: 'asset', id: null});
     }
   };
 
@@ -357,13 +365,15 @@ export default function InventoryManagement() {
     }
   };
 
-  const handleDeleteTool = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this tool?')) return;
+  const handleDeleteTool = async () => {
+    if (!deleteConfirmState.id) return;
     try {
-      await deleteDoc(doc(db, 'tool_inventory', id));
+      await deleteDoc(doc(db, 'tool_inventory', deleteConfirmState.id));
       toast.success("Tool deleted successfully");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'tool_inventory');
+    } finally {
+      setDeleteConfirmState({isOpen: false, type: 'tool', id: null});
     }
   };
 
@@ -991,8 +1001,8 @@ export default function InventoryManagement() {
                               <Button variant="ghost" size="icon" title="View Details" onClick={() => setDetailsModal({isOpen: true, item})} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
                                 <FileText className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                <Trash2 className="w-4 h-4" />
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmState({isOpen: true, type: 'item', id: item.id})} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 className="w-4 h-4 pointer-events-none" />
                               </Button>
                             </div>
                           </td>
@@ -1040,10 +1050,10 @@ export default function InventoryManagement() {
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="icon" title="Edit Asset" onClick={() => openEditAssetModal(asset)} className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
-                                <Edit className="w-4 h-4" />
+                                <Edit className="w-4 h-4 pointer-events-none" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteAsset(asset.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                <Trash2 className="w-4 h-4" />
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmState({isOpen: true, type: 'asset', id: asset.id})} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 className="w-4 h-4 pointer-events-none" />
                               </Button>
                             </div>
                           </td>
@@ -1099,8 +1109,8 @@ export default function InventoryManagement() {
                               <Button variant="ghost" size="icon" title="View Details" onClick={() => setDetailsModal({isOpen: true, item: tool})} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
                                 <FileText className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteTool(tool.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                <Trash2 className="w-4 h-4" />
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmState({isOpen: true, type: 'tool', id: tool.id})} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 className="w-4 h-4 pointer-events-none" />
                               </Button>
                             </div>
                           </td>
@@ -1355,6 +1365,17 @@ export default function InventoryManagement() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={deleteConfirmState.isOpen}
+        title={`Delete ${deleteConfirmState.type === 'item' ? 'Item' : deleteConfirmState.type === 'asset' ? 'Asset' : 'Tool'}`}
+        message={`Are you sure you want to delete this ${deleteConfirmState.type}? This action cannot be undone.`}
+        onConfirm={() => {
+          if (deleteConfirmState.type === 'item') handleDeleteItem();
+          else if (deleteConfirmState.type === 'asset') handleDeleteAsset();
+          else if (deleteConfirmState.type === 'tool') handleDeleteTool();
+        }}
+        onCancel={() => setDeleteConfirmState({isOpen: false, type: 'item', id: null})}
+      />
     </div>
   );
 }

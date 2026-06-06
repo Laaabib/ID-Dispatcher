@@ -91,9 +91,9 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && (
-        (request.auth.token.email == "padmaawtit@gmail.com" && request.auth.token.email_verified == true) ||
+        request.auth.token.email == "padmaawtit@gmail.com" ||
         request.auth.token.email == "140001@padmaawt.internal" ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'admin_approver', 'it_approver'])
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'admin_approver', 'it_approver', 'hr_manager'])
       );
     }
 
@@ -282,6 +282,18 @@ service cloud.firestore {
              isValidDateString(data.createdAt);
     }
 
+    function isValidActivityLog(data) {
+      return hasOnlyAllowedFields(['userId', 'userName', 'userEmail', 'action', 'resourceId', 'resourceName', 'resourceType', 'timestamp']) &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.userName is string && data.userName.size() > 0 && data.userName.size() <= 100 &&
+             (!('userEmail' in data) || data.userEmail == null || (data.userEmail is string && data.userEmail.size() <= 100)) &&
+             data.action is string && data.action.size() > 0 && data.action.size() <= 50 &&
+             data.resourceId is string && data.resourceId.size() > 0 && data.resourceId.size() <= 100 &&
+             data.resourceName is string && data.resourceName.size() > 0 && data.resourceName.size() <= 200 &&
+             data.resourceType is string && data.resourceType.size() > 0 && data.resourceType.size() <= 50 &&
+             isValidDateString(data.timestamp);
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -422,6 +434,26 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    match /departments/{departmentId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /designations/{designationId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /trainees/{traineeId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /employee_ids/{recordId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
     match /leave_applications/{leaveId} {
       // Users can read their own leave apps, admins can read all
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
@@ -437,6 +469,12 @@ service cloud.firestore {
                          )
                        );
       allow delete: if isSuperAdmin();
+    }
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidActivityLog(request.resource.data) && request.resource.data.userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

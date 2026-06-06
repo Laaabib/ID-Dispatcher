@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'dark' | 'light' | 'system';
+type AccentColor = 'default' | 'bd-army' | 'ocean' | 'crimson';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: Theme;
+  defaultAccent?: AccentColor;
   storageKey?: string;
 };
 
@@ -13,6 +15,8 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void;
   colorblind: boolean;
   setColorblind: (colorblind: boolean) => void;
+  accentColor: AccentColor;
+  setAccentColor: (accent: AccentColor) => void;
 };
 
 const initialState: ThemeProviderState = {
@@ -20,6 +24,8 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
   colorblind: false,
   setColorblind: () => null,
+  accentColor: 'default',
+  setAccentColor: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -27,6 +33,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
+  defaultAccent = 'default',
   storageKey = 'vite-ui-theme',
   ...props
 }: ThemeProviderProps) {
@@ -38,10 +45,14 @@ export function ThemeProvider({
     () => localStorage.getItem(`${storageKey}-colorblind`) === 'true'
   );
 
+  const [accentColor, setAccentColor] = useState<AccentColor>(
+    () => (localStorage.getItem(`${storageKey}-accent`) as AccentColor) || defaultAccent
+  );
+
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove('light', 'dark');
+    root.classList.remove('light', 'dark', 'theme-bd-army', 'theme-ocean', 'theme-crimson', 'theme-default');
 
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
@@ -59,7 +70,11 @@ export function ThemeProvider({
     } else {
       root.classList.remove('colorblind');
     }
-  }, [theme, colorblind]);
+
+    if (accentColor !== 'default') {
+      root.classList.add(`theme-${accentColor}`);
+    }
+  }, [theme, colorblind, accentColor]);
 
   const value = {
     theme,
@@ -71,6 +86,11 @@ export function ThemeProvider({
     setColorblind: (cb: boolean) => {
       localStorage.setItem(`${storageKey}-colorblind`, String(cb));
       setColorblind(cb);
+    },
+    accentColor,
+    setAccentColor: (accent: AccentColor) => {
+      localStorage.setItem(`${storageKey}-accent`, accent);
+      setAccentColor(accent);
     }
   };
 

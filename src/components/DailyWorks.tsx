@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { downloadDailyWorksPDF } from '../lib/pdf';
+import { ConfirmDialog } from './ui/confirm-dialog';
 
 interface DailyWork {
   id: string;
@@ -37,6 +38,7 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
   const [newTaskTimesNeeded, setNewTaskTimesNeeded] = useState('');
   const [newTaskRemarks, setNewTaskRemarks] = useState('');
   const [internalIsAdding, setInternalIsAdding] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const isAdding = externalIsAdding !== undefined ? externalIsAdding : internalIsAdding;
   const setIsAdding = externalSetIsAdding || setInternalIsAdding;
@@ -108,13 +110,15 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
     }
   };
 
-  const handleDeleteTask = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
+  const handleDeleteTask = async () => {
+    if (!deleteConfirmId) return;
     try {
-      await deleteDoc(doc(db, 'daily_works', id));
+      await deleteDoc(doc(db, 'daily_works', deleteConfirmId));
       toast.success("Task deleted successfully");
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `daily_works/${id}`);
+      handleFirestoreError(error, OperationType.DELETE, `daily_works/${deleteConfirmId}`);
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -181,11 +185,11 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
               <div className="flex justify-between items-start gap-2">
                 <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">{work.title}</p>
                 <button 
-                  onClick={() => handleDeleteTask(work.id)}
+                  onClick={() => setDeleteConfirmId(work.id)}
                   className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110"
                   title="Delete task"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4 pointer-events-none" />
                 </button>
               </div>
               {(work.taskDate || work.taskTime) && (
@@ -366,6 +370,14 @@ export default function DailyWorks({ isAdding: externalIsAdding, setIsAdding: ex
           />
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirmId}
+        title="Delete Task"
+        message="Are you sure you want to delete this task?"
+        onConfirm={handleDeleteTask}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
     </div>
   );
 }
