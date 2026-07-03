@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, onSnapshot, orderBy, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { format } from 'date-fns';
+import { Input } from '../components/ui/input';
+import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
 import { Navigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { downloadApplicationPDF } from '../lib/pdf';
-import { Download, X, Eye, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, X, Eye, FileText, ChevronDown, ChevronUp, Search, Filter, Printer, Share2, Trash2, Edit } from 'lucide-react';
 import logoImg from '../assets/Logo.svg';
 
 const DataRow = ({ label, value }: { label: string; value: string }) => (
@@ -65,6 +66,12 @@ export default function AdminPanel() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [expandedPreviewId, setExpandedPreviewId] = useState<string | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
 
   const togglePreview = (id: string) => {
     setExpandedPreviewId(expandedPreviewId === id ? null : id);
@@ -134,12 +141,62 @@ export default function AdminPanel() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Approved': return <Badge variant="success">Approved</Badge>;
-      case 'Printed': return <Badge variant="default">Printed</Badge>;
-      case 'Distributed': return <Badge variant="secondary">Distributed</Badge>;
+      case 'Printed': return <Badge variant="info">Printed</Badge>;
+      case 'Distributed': return <Badge variant="purple">Distributed</Badge>;
       case 'Rejected': return <Badge variant="destructive">Rejected</Badge>;
-      default: return <Badge variant="warning">Pending</Badge>;
+      case 'Draft': return <Badge variant="draft">Draft</Badge>;
+      default: return <Badge variant="warning">{status || 'Pending'}</Badge>;
     }
   };
+
+  const filteredApps = useMemo(() => {
+    let result = applications.filter(app => {
+      // Search text
+      const matchesSearch = 
+        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.employeeId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.nidNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Department
+      const matchesDept = deptFilter === 'all' || app.department === deptFilter;
+      
+      // Status
+      const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
+      
+      // Date
+      let matchesDate = true;
+      if (dateFilter !== 'all') {
+        try {
+          const d = new Date(app.createdAt);
+          if (dateFilter === 'today') matchesDate = isToday(d);
+          else if (dateFilter === 'thisWeek') matchesDate = isThisWeek(d);
+          else if (dateFilter === 'thisMonth') matchesDate = isThisMonth(d);
+        } catch (e) {
+          matchesDate = false;
+        }
+      }
+
+      return matchesSearch && matchesDept && matchesStatus && matchesDate;
+    });
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortOrder === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortOrder === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (sortOrder === 'nameAsc') return a.name.localeCompare(b.name);
+      return 0;
+    });
+
+    return result;
+  }, [applications, searchQuery, deptFilter, statusFilter, dateFilter, sortOrder]);
+
+  const uniqueDepartments = useMemo(() => {
+    const depts = new Set<string>();
+    applications.forEach(app => {
+      if (app.department) depts.add(app.department);
+    });
+    return Array.from(depts).sort();
+  }, [applications]);
 
   return (
     <div className="space-y-6">
@@ -156,18 +213,123 @@ export default function AdminPanel() {
         </Link>
       </div>
 
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input 
+            placeholder="Search employee..." 
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap md:flex-nowrap gap-3">
+          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 px-2 h-10">
+            <Filter className="w-4 h-4 text-slate-400 mr-2" />
+            <select
+              className="bg-transparent border-none text-sm focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 min-w-[120px]"
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+            >
+              <option value="all">Department (All)</option>
+              {uniqueDepartments.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 px-2 h-10">
+            <select
+              className="bg-transparent border-none text-sm focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 min-w-[110px]"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">Status (All)</option>
+              <option value="Approved">Approved</option>
+              <option value="Printed">Printed</option>
+              <option value="Distributed">Distributed</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Draft">Draft</option>
+            </select>
+          </div>
+
+          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 px-2 h-10">
+            <select
+              className="bg-transparent border-none text-sm focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 min-w-[110px]"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            >
+              <option value="all">Date (All)</option>
+              <option value="today">Today</option>
+              <option value="thisWeek">This Week</option>
+              <option value="thisMonth">This Month</option>
+            </select>
+          </div>
+
+          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 px-2 h-10">
+            <select
+              className="bg-transparent border-none text-sm focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 min-w-[110px]"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+            >
+              <option value="newest">Sort: Newest</option>
+              <option value="oldest">Sort: Oldest</option>
+              <option value="nameAsc">Sort: Name A-Z</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">Loading applications...</div>
-      ) : applications.length === 0 ? (
+      ) : filteredApps.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No applications yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No applications found</h3>
+            <p className="text-sm text-gray-500">Try adjusting your search or filters.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6">
-          {applications.map((app) => (
-            <Card key={app.id} className="overflow-hidden">
+          {filteredApps.map((app) => (
+            <Card key={app.id} className="overflow-hidden relative group hover:border-primary-200 dark:hover:border-primary-800 transition-all">
+              <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-sm border border-slate-200 dark:border-slate-700 rounded-lg p-1 z-10">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 dark:text-slate-400 hover:text-blue-600" onClick={() => setSelectedApp(app)} title="View">
+                  <Eye className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 dark:text-slate-400 hover:text-emerald-600" onClick={() => {
+                    setTimeout(() => window.print(), 100);
+                  }} title="Print">
+                  <Printer className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 dark:text-slate-400 hover:text-indigo-600" onClick={() => downloadApplicationPDF(app, logoImg)} title="Download PDF">
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 dark:text-slate-400 hover:text-amber-600" onClick={() => toast.info('Edit mode enabled for ' + app.name)} title="Edit">
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 dark:text-slate-400 hover:text-purple-600" onClick={async () => {
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({ title: 'ID Card Application', text: `ID Card Application for ${app.name}`, url: window.location.href });
+                    } else {
+                      await navigator.clipboard.writeText(window.location.href);
+                      toast.success('Link copied to clipboard');
+                    }
+                  } catch (e) {}
+                }} title="Share">
+                  <Share2 className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 dark:text-slate-400 hover:text-red-600" onClick={async () => {
+                  if(window.confirm('Are you sure you want to delete this application?')) {
+                    await deleteDoc(doc(db, 'applications', app.id));
+                    toast.success('Deleted successfully');
+                  }
+                }} title="Delete">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
               <div className="flex flex-col md:flex-row">
                 <div className="flex-1 p-6">
                   <div className="flex justify-between items-start mb-4">

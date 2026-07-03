@@ -84,10 +84,11 @@ export default function AdminDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Approved': return <Badge variant="success">Approved</Badge>;
-      case 'Printed': return <Badge variant="default">Printed</Badge>;
-      case 'Distributed': return <Badge variant="secondary">Distributed</Badge>;
+      case 'Printed': return <Badge variant="info">Printed</Badge>;
+      case 'Distributed': return <Badge variant="purple">Distributed</Badge>;
       case 'Rejected': return <Badge variant="destructive">Rejected</Badge>;
-      default: return <Badge variant="warning">Pending</Badge>;
+      case 'Draft': return <Badge variant="draft">Draft</Badge>;
+      default: return <Badge variant="warning">{status || 'Pending'}</Badge>;
     }
   };
 

@@ -85,6 +85,9 @@ const NavLinksDesktopMobile = ({ onClick, isCollapsed, isAdmin, role, isSpecialU
         <NavItem to="/trainees" icon={BadgeIcon} onClick={onClick} isCollapsed={isCollapsed}>Trainee Management</NavItem>
         <NavItem to="/employee-id-generation" icon={FileText} onClick={onClick} isCollapsed={isCollapsed}>ID Num Distribution</NavItem>
         <NavItem to="/attendance" icon={CheckCircle2} onClick={onClick} isCollapsed={isCollapsed}>Attendance</NavItem>
+        <NavItem to="/admin" icon={BadgeIcon} onClick={onClick} isCollapsed={isCollapsed}>ID Cards</NavItem>
+        <NavItem to="/nametag-admin" icon={FileText} onClick={onClick} isCollapsed={isCollapsed}>Nametags</NavItem>
+        <NavItem to="/leave-admin" icon={Calendar} onClick={onClick} isCollapsed={isCollapsed}>Leave Requests</NavItem>
       </NavSection>
     )}
 
@@ -92,9 +95,6 @@ const NavLinksDesktopMobile = ({ onClick, isCollapsed, isAdmin, role, isSpecialU
     {isAdmin && (
       <NavSection title="Administration" icon={Shield} isCollapsed={isCollapsed} defaultExpanded={false}>
         <NavItem to="/admin-dashboard" icon={Shield} onClick={onClick} isCollapsed={isCollapsed}>Admin Dashboard</NavItem>
-        <NavItem to="/admin" icon={BadgeIcon} onClick={onClick} isCollapsed={isCollapsed}>ID Cards</NavItem>
-        <NavItem to="/nametag-admin" icon={FileText} onClick={onClick} isCollapsed={isCollapsed}>Nametags</NavItem>
-        <NavItem to="/leave-admin" icon={Calendar} onClick={onClick} isCollapsed={isCollapsed}>Leave Requests</NavItem>
         {role === 'admin' && (
           <NavItem to="/users" icon={UserIcon} onClick={onClick} isCollapsed={isCollapsed}>User Roles</NavItem>
         )}

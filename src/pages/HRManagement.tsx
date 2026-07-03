@@ -408,6 +408,25 @@ export default function HRManagement() {
 
   const PIE_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6', '#6366f1', '#f43f5e'];
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayAttendances = attendances.filter(a => a.date === todayStr);
+  const totalEmp = employees.length || 1;
+  const presentCount = todayAttendances.length;
+  const lateCount = todayAttendances.filter(a => a.checkInTime && a.checkInTime > '09:15').length;
+  const absentCount = Math.max(0, employees.length - presentCount);
+  const onTimeCount = presentCount - lateCount;
+  
+  const presentPercentage = Math.round((presentCount / totalEmp) * 100);
+  const onTimePercentage = Math.round((onTimeCount / totalEmp) * 100);
+  const latePercentage = Math.round((lateCount / totalEmp) * 100);
+  const absentPercentage = Math.round((absentCount / totalEmp) * 100);
+
+  const attendanceWidgetData = [
+    { name: 'On Time', value: onTimeCount, color: '#10b981' },
+    { name: 'Late', value: lateCount, color: '#f59e0b' },
+    { name: 'Absent', value: absentCount, color: '#ef4444' }
+  ];
+
 
   if (loading) {
     return <div className="p-8 text-center text-slate-500">Loading HR Data...</div>;
@@ -459,225 +478,360 @@ export default function HRManagement() {
 
       {isAdminOrHR && activeTab === 'dashboard' && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md hover:border-primary-200 dark:hover:border-primary-800 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Employees</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{employees.length}</p>
+              <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-1">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full mb-1">
+                    <UserIcon className="w-5 h-5" />
                   </div>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                    <UserIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Employees</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{employees.length}</h3>
+                </CardContent>
+              </Card>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
+              <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-1">
+                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full mb-1">
+                    <CheckCircle className="w-5 h-5" />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md hover:border-primary-200 dark:hover:border-primary-800 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Today's Attendance</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">
-                      {attendances.filter(a => a.date === new Date().toISOString().split('T')[0]).length}
-                    </p>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Present Today</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {attendances.filter(a => a.date === new Date().toISOString().split('T')[0]).length}
+                  </h3>
+                </CardContent>
+              </Card>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
+              <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-1">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full mb-1">
+                    <XCircle className="w-5 h-5" />
                   </div>
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                    <Clock className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md hover:border-primary-200 dark:hover:border-primary-800 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Pending Leaves</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">
-                      {leaves.filter(l => l.status === 'Pending' || l.status === 'Approved by HOD').length}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                    <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Absent</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {Math.max(0, employees.length - attendances.filter(a => a.date === new Date().toISOString().split('T')[0]).length)}
+                  </h3>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-        <div className="mt-8 mb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Payroll Overview</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Monthly Salary</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">৳{payrollTotals.totalBasic.toLocaleString()}</p>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.25 }}>
+              <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-1">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full mb-1">
+                    <ClockIcon className="w-5 h-5" />
                   </div>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                    <Banknote className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Late</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {attendances.filter(a => a.date === new Date().toISOString().split('T')[0] && a.checkInTime && a.checkInTime > '09:15').length}
+                  </h3>
+                </CardContent>
+              </Card>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
+              <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-1">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full mb-1">
+                    <Calendar className="w-5 h-5" />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Allowance</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">৳{payrollTotals.totalHouse.toLocaleString()}</p>
-                  </div>
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
-                    <Wallet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Service Charge</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">৳{payrollTotals.totalServiceCharge.toLocaleString()}</p>
-                  </div>
-                  <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
-                    <Coins className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 }} className="h-full">
-            <Card className="border-slate-200 dark:border-slate-800 h-full">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Monthly Payroll Expenses</h2>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={payrollExpenseData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} tickFormatter={(value) => `৳${value}`} />
-                      <Tooltip 
-                        cursor={{ fill: 'transparent' }}
-                        contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' }}
-                        formatter={(value) => [`৳${value}`, undefined]}
-                      />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                      <Bar dataKey="Basic Salary" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={60} />
-                      <Bar dataKey="House Allowance" fill="#10b981" radius={[4, 4, 0, 0]} barSize={60} />
-                      <Bar dataKey="Service Charge" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={60} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Leaves</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {leaves.filter(l => l.status === 'Pending' || l.status === 'Approved by HOD').length}
+                  </h3>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.5 }} className="h-full">
-            <Card className="border-slate-200 dark:border-slate-800 h-full">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Department Distribution</h2>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={departmentData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
-                      >
-                        {departmentData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' }}
-                        formatter={(value) => [`${value} Employees`, undefined]}
-                      />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.35 }}>
+              <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-1">
+                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full mb-1">
+                    <Banknote className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Payroll Due</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()} Days
+                  </h3>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="xl:col-span-2 space-y-8">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Payroll Overview</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+                    <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Monthly</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">৳{payrollTotals.totalBasic.toLocaleString()}</p>
+                          </div>
+                          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                            <Banknote className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                  
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
+                    <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Allowance</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">৳{payrollTotals.totalHouse.toLocaleString()}</p>
+                          </div>
+                          <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                            <Wallet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                  
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
+                    <Card className="border-slate-200 dark:border-slate-800 transition-all hover:shadow-md cursor-pointer">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Service Charge</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">৳{payrollTotals.totalServiceCharge.toLocaleString()}</p>
+                          </div>
+                          <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
+                            <Coins className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 }} className="h-full">
+                  <Card className="border-slate-200 dark:border-slate-800 h-full">
+                    <CardContent className="p-6">
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Payroll Expenses</h2>
+                      <div className="h-[250px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={payrollExpenseData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `৳${value}`} />
+                            <Tooltip 
+                              cursor={{ fill: 'transparent' }}
+                              contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc', fontSize: 12 }}
+                              formatter={(value) => [`৳${value}`, undefined]}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: '20px', fontSize: 12 }} />
+                            <Bar dataKey="Basic Salary" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+                            <Bar dataKey="House Allowance" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
+                            <Bar dataKey="Service Charge" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+                
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.5 }} className="h-full">
+                  <Card className="border-slate-200 dark:border-slate-800 h-full">
+                    <CardContent className="p-6">
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Department Distribution</h2>
+                      <div className="h-[250px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={departmentData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              labelLine={false}
+                              style={{ fontSize: 10 }}
+                            >
+                              {departmentData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc', fontSize: 12 }}
+                              formatter={(value) => [`${value} Employees`, undefined]}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: '20px', fontSize: 12 }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
 
-        <div className="mt-8 mb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Leave Summary ({new Date().toLocaleString('default', { month: 'long' })})</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all">
-              <CardContent className="p-6 flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Approved Leaves</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{leaveStats.approved}</p>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Leave Summary ({new Date().toLocaleString('default', { month: 'long' })})</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+                    <Card className="border-slate-200 dark:border-slate-800 transition-all">
+                      <CardContent className="p-6 flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Approved Leaves</p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{leaveStats.approved}</p>
+                        </div>
+                        <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                          <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                  
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
+                    <Card className="border-slate-200 dark:border-slate-800 transition-all">
+                      <CardContent className="p-6 flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Pending Leaves</p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{leaveStats.pending}</p>
+                        </div>
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+                          <ClockIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                  
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
+                    <Card className="border-slate-200 dark:border-slate-800 transition-all">
+                      <CardContent className="p-6 flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Rejected Leaves</p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{leaveStats.rejected}</p>
+                        </div>
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                          <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
-                  <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all">
-              <CardContent className="p-6 flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Pending Leaves</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{leaveStats.pending}</p>
-                </div>
-                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
-                  <ClockIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
-            <Card className="border-slate-200 dark:border-slate-800 transition-all">
-              <CardContent className="p-6 flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Rejected Leaves</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{leaveStats.rejected}</p>
-                </div>
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
-                  <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+                <LeaveCalendar leaves={leaves} onDayClick={handleDayClick} />
+              </div>
+            </div>
 
-        <LeaveCalendar leaves={leaves} onDayClick={handleDayClick} />
-      </>)}
+            <div className="xl:col-span-1 space-y-8">
+              <Card className="border-slate-200 dark:border-slate-800">
+                <CardContent className="p-6">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Today's Attendance</h2>
+                  
+                  <div className="h-[200px] w-full relative mb-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={attendanceWidgetData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {attendanceWidgetData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {presentPercentage}%
+                      </span>
+                      <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Present</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        <span className="text-slate-600 dark:text-slate-300">On Time</span>
+                      </div>
+                      <span className="font-medium text-slate-900 dark:text-white">{onTimePercentage}%</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                        <span className="text-slate-600 dark:text-slate-300">Late</span>
+                      </div>
+                      <span className="font-medium text-slate-900 dark:text-white">{latePercentage}%</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                        <span className="text-slate-600 dark:text-slate-300">Absent</span>
+                      </div>
+                      <span className="font-medium text-slate-900 dark:text-white">{absentPercentage}%</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-200 dark:border-slate-800">
+                <CardContent className="p-6">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Recent Activity</h2>
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-2.5 h-2.5 mt-1.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">Ahmed checked in</p>
+                        <p className="text-xs text-slate-500 mt-1">09:02 AM</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-2.5 h-2.5 mt-1.5 rounded-full bg-amber-500 shrink-0 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">3 Leave requests submitted</p>
+                        <p className="text-xs text-slate-500 mt-1">10:15 AM</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-2.5 h-2.5 mt-1.5 rounded-full bg-blue-500 shrink-0 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">Payroll generated</p>
+                        <p className="text-xs text-slate-500 mt-1">Yesterday, 4:30 PM</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-2.5 h-2.5 mt-1.5 rounded-full bg-purple-500 shrink-0 shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">New employee joined</p>
+                        <p className="text-xs text-slate-500 mt-1">Oct 12</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-2.5 h-2.5 mt-1.5 rounded-full bg-red-500 shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">Leave rejected</p>
+                        <p className="text-xs text-slate-500 mt-1">Oct 11</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </>
+      )}
 
       {isAdminOrHR && activeTab === 'attendance' && (
         <Card className="border-slate-200 dark:border-slate-800 overflow-hidden">

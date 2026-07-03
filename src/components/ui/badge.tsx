@@ -2,7 +2,7 @@ import * as React from "react"
 import { cn } from "../../lib/utils"
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
+  variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "purple" | "draft";
   className?: string;
   children?: React.ReactNode;
 }
@@ -18,6 +18,9 @@ function Badge({ className, variant = "default", ...props }: BadgeProps) {
           "border-transparent bg-destructive-100 dark:bg-destructive-900/50 text-destructive-700 dark:text-destructive-200 hover:bg-destructive-200 dark:hover:bg-destructive-900/70": variant === "destructive",
           "border-transparent bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-200 dark:hover:bg-emerald-900/70": variant === "success",
           "border-transparent bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900/70": variant === "warning",
+          "border-transparent bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/70": variant === "info",
+          "border-transparent bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-900/70": variant === "purple",
+          "border-transparent bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700": variant === "draft",
           "text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700": variant === "outline",
         },
         className

@@ -104,6 +104,7 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
     employeeName: "",
     employeeId: "",
     department: "",
+    designation: "",
     leaveType: "Annual",
     startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
@@ -181,6 +182,7 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
       employeeName: leave.employeeName || "",
       employeeId: leave.employeeId || "",
       department: leave.department || "",
+      designation: leave.designation || "",
       leaveType: leave.leaveType || "Annual",
       startDate: leave.startDate || format(new Date(), "yyyy-MM-dd"),
       endDate: leave.endDate || format(new Date(), "yyyy-MM-dd"),
@@ -199,6 +201,7 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
   const resetForm = () => {
     setFormData({
       ...formData,
+      designation: "",
       leaveType: "Annual",
       startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
@@ -235,6 +238,7 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
           employeeName: formData.employeeName,
           employeeId: formData.employeeId || "",
           department: formData.department || "",
+          designation: formData.designation || "",
           leaveType: formData.leaveType,
           startDate: formData.startDate,
           endDate: formData.endDate,
@@ -257,6 +261,7 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
           employeeName: formData.employeeName,
           employeeId: formData.employeeId || "",
           department: formData.department || "",
+          designation: formData.designation || "",
           leaveType: formData.leaveType,
           startDate: formData.startDate,
           endDate: formData.endDate,
@@ -385,6 +390,17 @@ export default function LeaveApplication({ embedded = false }: { embedded?: bool
                     id="employeeId"
                     name="employeeId"
                     value={formData.employeeId}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="designation">Job Title *</Label>
+                  <Input
+                    id="designation"
+                    name="designation"
+                    value={formData.designation}
                     onChange={handleChange}
                     required
                   />
